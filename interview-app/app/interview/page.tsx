@@ -1,139 +1,106 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 
-export default function Home() {
+export default function InterviewPage() {
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [question, setQuestion] = useState("Loading interview question...");
   const [answer, setAnswer] = useState("");
-  const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState<
     { question: string; answer: string }[]
   >([]);
 
-  /* ===========================
-     Speech Engine
-  =========================== */
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState("default");
+  const [showVoiceHelp, setShowVoiceHelp] = useState(false);
 
-  const recognitionRef = useRef<any>(null);
-  const finalTranscriptRef = useRef("");
-  const readyRef = useRef(true);
+  const answerRef = useRef<HTMLTextAreaElement>(null);
 
-  /* ===========================
-     Get Custom Question (SAFE)
-  =========================== */
+  const voiceImages: Record<string, string> = {
+    default: "/images/interviewer.png",
+    Matthew: "/images/interviewer.png",
+    Joanna: "/images/interviewer.png",
+    Brian: "/images/interviewer.png",
+    Amy: "/images/interviewer.png",
+  };
 
-  async function getQuestion(previous: string[] = []) {
+  /* ------------------ LOAD VOICES ------------------ */
+  useEffect(() => {
+    function loadVoices() {
+      const v = window.speechSynthesis.getVoices();
+      setVoices(v);
+    }
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
+
+  /* ------------------ LOAD QUESTIONS ONCE ------------------ */
+  useEffect(() => {
+    loadQuestions();
+  }, []);
+
+  async function loadQuestions() {
     try {
-      const stored = JSON.parse(
-        sessionStorage.getItem("interviewData") || "{}"
-      );
+      const stored = JSON.parse(sessionStorage.getItem("interviewData") || "{}");
 
       const res = await fetch("/api/interview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...stored,
-          previousQuestions: previous,
+          jobTitle: stored.jobTitle,
+          jobLevel: stored.jobLevel,
+          resumeText: stored.resumeText,
         }),
       });
 
-      if (!res.ok) throw new Error("API failed");
-
       const data = await res.json();
 
-      setQuestion(data?.question || "No question received");
+      if (!data.questions) {
+        setQuestion("No questions received");
+        return;
+      }
+
+      const questionList = data.questions
+        .split("\n")
+        .map((q: string) => q.trim())
+        .filter((q: string) => q.length > 0);
+
+      if (questionList.length === 0) {
+        setQuestion("No questions received");
+        return;
+      }
+
+      setQuestions(questionList);
+      setQuestion(questionList[0]);
+      setQuestionIndex(0);
     } catch (err) {
       console.error(err);
-      setQuestion("Unable to load question. Try again.");
+      setQuestion("Unable to load questions. Try again.");
     }
   }
 
-  /* ===========================
-     Load First Question
-  =========================== */
-
-  useEffect(() => {
-    getQuestion();
-  }, []);
-
-  /* ===========================
-     Speak Question
-  =========================== */
-
+  /* ------------------ READ QUESTION ALOUD ------------------ */
   useEffect(() => {
     if (!question || question.includes("Loading")) return;
 
     const utterance = new SpeechSynthesisUtterance(question);
+    const voice = voices.find((v) => v.name === selectedVoice);
+    if (voice) utterance.voice = voice;
+
     utterance.lang = "en-US";
+    utterance.rate = 0.95;
+    utterance.pitch = 1.02;
 
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
-  }, [question]);
+  }, [question, selectedVoice, voices]);
 
-  /* ===========================
-     Voice Controls
-  =========================== */
-
-  function startListening() {
-    if (!readyRef.current) return;
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert("Speech recognition not supported.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-
-    recognition.onresult = (event: any) => {
-      let interim = "";
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0].transcript;
-
-        if (event.results[i].isFinal) {
-          finalTranscriptRef.current += text + " ";
-        } else {
-          interim += text;
-        }
-      }
-
-      setAnswer(finalTranscriptRef.current + interim);
-    };
-
-    recognition.onend = () => {
-      readyRef.current = true;
-      setListening(false);
-    };
-
-    readyRef.current = false;
-    recognition.start();
-    setListening(true);
-  }
-
-  function stopListening() {
-    recognitionRef.current?.stop();
-  }
-
-  /* ===========================
-     Submit Answer
-  =========================== */
-
+  /* ------------------ SUBMIT ANSWER ------------------ */
   async function submitAnswer() {
     if (!answer.trim()) return;
 
-    const updatedTranscript = [
-      ...transcript,
-      { question, answer },
-    ];
-
+    const updatedTranscript = [...transcript, { question, answer }];
     setTranscript(updatedTranscript);
 
     sessionStorage.setItem(
@@ -141,25 +108,21 @@ export default function Home() {
       JSON.stringify(updatedTranscript)
     );
 
-    finalTranscriptRef.current = "";
     setAnswer("");
 
+    // If finished all 10 questions → go to results
     if (updatedTranscript.length >= 10) {
       window.location.href = "/results";
       return;
     }
 
-    setQuestion("Loading next question...");
-
-    await getQuestion(
-      updatedTranscript.map((t) => t.question)
-    );
+    // Load next question
+    const nextIndex = questionIndex + 1;
+    setQuestionIndex(nextIndex);
+    setQuestion(questions[nextIndex]);
   }
 
-  /* ===========================
-     UI
-  =========================== */
-
+  /* ------------------ UI ------------------ */
   return (
     <main
       style={{
@@ -169,6 +132,7 @@ export default function Home() {
         justifyContent: "center",
         backgroundColor: "#f4f6f8",
         fontFamily: "Arial",
+        paddingBottom: "40px", // ← NEW SPACING FIX
       }}
     >
       <div
@@ -189,17 +153,61 @@ export default function Home() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
-            padding: "30px",
+            justifyContent: "flex-start",
+            paddingTop: "20px",
+            paddingLeft: "30px",
+            paddingRight: "30px",
             background: "#fafafa",
           }}
         >
+          <h2
+            style={{
+              marginTop: 0,
+              marginBottom: "10px",
+              fontSize: "22px",
+              fontWeight: "bold",
+              color: "#0b3c6d",
+            }}
+          >
+            Interviewer Talking Text
+          </h2>
+
+          {/* VOICE DROPDOWN */}
+          <select
+            value={selectedVoice}
+            onChange={(e) => setSelectedVoice(e.target.value)}
+            style={{
+              padding: "10px",
+              fontSize: "16px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              marginBottom: "15px",
+              width: "260px",
+            }}
+          >
+            <option value="default">Default Voice</option>
+            {voices.map((voice) => (
+              <option key={voice.name} value={voice.name}>
+                {voice.name}
+              </option>
+            ))}
+          </select>
+
+          {/* IMAGE */}
           <img
-            src="/images/interviewer.png"
+            src={voiceImages[selectedVoice] || voiceImages.default}
             alt="Interviewer"
-            style={{ maxHeight: "45%" }}
+            style={{
+              width: "220px",
+              height: "220px",
+              objectFit: "cover",
+              borderRadius: "50%",
+              boxShadow: "0 6px 14px rgba(0,0,0,0.2)",
+              marginBottom: "20px",
+            }}
           />
 
+          {/* QUESTION BOX */}
           <div
             style={{
               marginTop: "20px",
@@ -226,7 +234,6 @@ export default function Home() {
           }}
         >
           <h3>Interview Transcript</h3>
-
           {transcript.map((item, i) => (
             <div key={i} style={{ marginBottom: 20 }}>
               <strong>Q:</strong>
@@ -253,32 +260,139 @@ export default function Home() {
         }}
       >
         <textarea
+          ref={answerRef}
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
-          placeholder="Type or speak your interview answer here..."
-          style={{ flex: 1, height: 80, fontSize: 16 }}
+          placeholder="Type your interview answer here..."
+          style={{
+            flex: 1,
+            height: 80,
+            fontSize: 16,
+            border: "2px solid #0078ff",
+            borderRadius: "8px",
+            padding: "10px",
+          }}
         />
 
+        {/* 🔥 YOUR POPUP BUTTON IS BACK */}
         <button
-          onMouseDown={startListening}
-          onMouseUp={stopListening}
-          onMouseLeave={stopListening}
+          onClick={() => {
+            answerRef.current?.focus();
+            answerRef.current?.select();
+
+            const keyboardEvent = new KeyboardEvent("keydown", {
+              key: "d",
+              code: "KeyD",
+              bubbles: true,
+            });
+
+            answerRef.current?.dispatchEvent(keyboardEvent);
+            setShowVoiceHelp(true);
+          }}
           style={{
-            padding: "10px 16px",
-            background: listening ? "#ff4d4d" : "#eee",
+            padding: "12px 22px",
+            background: "#0057ff",
+            color: "white",
+            fontWeight: "bold",
+            borderRadius: "10px",
+            border: "none",
+            boxShadow: "0 6px 14px rgba(0,0,0,0.25)",
             cursor: "pointer",
+            fontSize: "17px",
           }}
         >
-          🎤 Hold to Speak
+          🎤 Start Voice Recording
         </button>
 
         <button
           onClick={submitAnswer}
-          style={{ padding: "10px 20px", cursor: "pointer" }}
+          style={{
+            padding: "10px 20px",
+            background: "#28a745",
+            color: "white",
+            fontWeight: "bold",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
         >
           Submit Answer
         </button>
       </div>
+
+      {/* POPUP OVERLAY */}
+      {showVoiceHelp && (
+        <div
+          onClick={() => setShowVoiceHelp(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 999,
+          }}
+        />
+      )}
+
+      {/* POPUP BOX */}
+      {showVoiceHelp && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "120px",
+            right: "40px",
+            background: "white",
+            padding: "25px",
+            borderRadius: "12px",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+            width: "340px",
+            zIndex: 1000,
+            animation: "popIn 0.25s ease-out",
+          }}
+        >
+          <h3>Use Voice Typing</h3>
+          <p>You can use your device’s built-in speech-to-text:</p>
+
+          <ul>
+            <li><strong>Chromebook:</strong> Search + D</li>
+            <li><strong>Windows:</strong> Windows + H</li>
+            <li><strong>Mac:</strong> Fn twice</li>
+            <li><strong>iPhone/iPad:</strong> Keyboard mic</li>
+            <li><strong>Android:</strong> Keyboard mic</li>
+          </ul>
+
+          <button
+            onClick={() => {
+              setShowVoiceHelp(false);
+              setTimeout(() => answerRef.current?.focus(), 50);
+            }}
+            style={{
+              marginTop: "10px",
+              padding: "8px 12px",
+              background: "#ddd",
+              borderRadius: "6px",
+              cursor: "pointer",
+            }}
+          >
+            Close
+          </button>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes popIn {
+          0% {
+            transform: scale(0.85);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </main>
   );
 }

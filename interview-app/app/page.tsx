@@ -1,123 +1,155 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function StartPage() {
   const router = useRouter();
 
-  const [studentName, setStudentName] = useState("");
-  const [program, setProgram] = useState("");
   const [jobTitle, setJobTitle] = useState("");
-  const [company, setCompany] = useState("");
-  const [jobPosting, setJobPosting] = useState("");
+  const [jobLevel, setJobLevel] = useState("");
   const [resumeText, setResumeText] = useState("");
+  const [resumeUploaded, setResumeUploaded] = useState(false);
+
+  // ⭐ FILE UPLOAD HANDLER (DOCX + PDF + TXT)
+  async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.toLowerCase().split(".").pop();
+
+    // ⭐ DOCX (Mammoth)
+    if (ext === "docx") {
+      const mammoth = await import("mammoth");
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      setResumeText(result.value);
+      setResumeUploaded(true);
+      return;
+    }
+
+    // ⭐ TXT
+    if (ext === "txt") {
+      const text = await file.text();
+      setResumeText(text);
+      setResumeUploaded(true);
+      return;
+    }
+
+    // ⭐ PDF
+    if (ext === "pdf") {
+      const reader = new FileReader();
+
+      reader.onload = async () => {
+        const typedArray = new Uint8Array(reader.result as ArrayBuffer);
+
+        const pdfjsLib = await import("pdfjs-dist/build/pdf");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
+
+        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+        let fullText = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map((item: any) => item.str).join(" ") + "\n";
+        }
+
+        setResumeText(fullText);
+        setResumeUploaded(true);
+      };
+
+      reader.readAsArrayBuffer(file);
+      return;
+    }
+
+    alert("Unsupported file type. Please upload a DOCX, PDF, or TXT file.");
+  }
 
   function startInterview() {
-    if (!studentName || !jobTitle) {
-      alert("Please enter your name and job title.");
+    if (!jobTitle || !jobLevel || !resumeUploaded) {
+      alert("Please upload your resume and complete all required fields.");
       return;
     }
 
     const interviewData = {
-      studentName,
-      program,
       jobTitle,
-      company,
-      jobPosting,
+      jobLevel,
       resumeText,
       startTime: new Date().toISOString(),
     };
 
-    sessionStorage.setItem(
-      "interviewData",
-      JSON.stringify(interviewData)
-    );
-
+    sessionStorage.setItem("interviewData", JSON.stringify(interviewData));
     router.push("/interview");
   }
 
   return (
     <main style={pageStyle}>
       <div style={cardStyle}>
-        <h1>AI Interview Coach</h1>
-        <p style={{ color: "#555" }}>
-          Complete a realistic job interview simulation tailored to the
-          position you are applying for.
+        <h1 style={{ marginBottom: 5 }}>New Castle School of Trades Interviewer</h1>
+        <p style={{ color: "#555", marginTop: 0 }}>
+          Upload your resume and select the job you want to practice interviewing for.
         </p>
 
-        {/* STUDENT */}
-        <Section title="Applicant Information">
+        {/* JOB TITLE */}
+        <Section title="Job Title (Required)">
           <input
-            placeholder="Student Name *"
-            value={studentName}
-            onChange={(e) => setStudentName(e.target.value)}
-            style={inputStyle}
-          />
-
-          <input
-            placeholder="Program / Class"
-            value={program}
-            onChange={(e) => setProgram(e.target.value)}
-            style={inputStyle}
-          />
-        </Section>
-
-        {/* JOB */}
-        <Section title="Position Details">
-          <input
-            placeholder="Job Title Applying For *"
+            placeholder="e.g., Welder, Carpenter, HVAC Technician"
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
             style={inputStyle}
           />
+        </Section>
 
+        {/* JOB LEVEL */}
+        <Section title="Job Level (Required)">
+          <select
+            value={jobLevel}
+            onChange={(e) => setJobLevel(e.target.value)}
+            style={{ ...inputStyle, background: "white" }}
+          >
+            <option value="">Select job level...</option>
+            <option>Apprentice</option>
+            <option>Junior</option>
+            <option>Intermediate</option>
+            <option>Senior</option>
+            <option>Lead</option>
+            <option>Supervisor</option>
+            <option>Manager</option>
+            <option>Director</option>
+          </select>
+        </Section>
+
+        {/* RESUME UPLOAD */}
+        <Section title="Resume Upload (Required)">
           <input
-            placeholder="Company Name"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            style={inputStyle}
+            id="resumeFile"
+            type="file"
+            accept=".pdf,.txt,.docx"
+            style={{ display: "none" }}
+            onChange={handleResumeUpload}
           />
-        </Section>
 
-        {/* JOB POSTING */}
-        <Section title="Job Posting (Recommended)">
-          <textarea
-            placeholder="Paste the job advertisement here to generate customized interview questions."
-            value={jobPosting}
-            onChange={(e) => setJobPosting(e.target.value)}
-            style={{ ...inputStyle, height: 120 }}
-          />
-        </Section>
+          <button
+            onClick={() => document.getElementById("resumeFile")?.click()}
+            style={uploadButtonStyle}
+          >
+            Upload Resume File
+          </button>
 
-        {/* RESUME */}
-        <Section title="Resume (Optional)">
-          <textarea
-            placeholder="Paste resume text to allow the interviewer to ask personalized questions."
-            value={resumeText}
-            onChange={(e) => setResumeText(e.target.value)}
-            style={{ ...inputStyle, height: 120 }}
-          />
+          {resumeUploaded && (
+            <p style={{ color: "green", marginTop: 8, fontWeight: "bold" }}>
+              ✓ Resume uploaded successfully
+            </p>
+          )}
         </Section>
 
         {/* EXPECTATIONS */}
         <div style={noticeStyle}>
           <strong>Interview Expectations</strong>
-          <p>
-            This interview may be completed as many times as needed.
-            Your goal is to reach a professional interview standard.
-          </p>
-          <p>
-            A completion certificate is issued once a score of
-            <b> 80% or higher </b> is achieved.
-          </p>
-          <p>
-            Review feedback after each attempt and improve your
-            responses before retrying.
-          </p>
-          <p style={{ marginBottom: 0 }}>
-            Your responses will be recorded and included in your final
-            report.
-          </p>
+          <p>This interview is customized based on your resume and job selection.</p>
+          <p>You may complete the interview as many times as needed.</p>
+          <p>A completion certificate is issued once a score of <b>80% or higher</b> is achieved.</p>
         </div>
 
         <button onClick={startInterview} style={buttonStyle}>
@@ -130,13 +162,7 @@ export default function StartPage() {
 
 /* ---------- components ---------- */
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 25 }}>
       <h3>{title}</h3>
@@ -172,6 +198,17 @@ const inputStyle: React.CSSProperties = {
   fontSize: 16,
   borderRadius: 6,
   border: "1px solid #ccc",
+};
+
+const uploadButtonStyle = {
+  marginTop: 10,
+  padding: "10px 14px",
+  background: "#0b3c6d",
+  color: "white",
+  border: "none",
+  borderRadius: 6,
+  cursor: "pointer",
+  fontSize: 16,
 };
 
 const noticeStyle = {
