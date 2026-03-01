@@ -1,10 +1,10 @@
 import OpenAI from "openai";
-
+import { NextRequest } from "next/server";
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-import { NextRequest } from "next/server";
+
 
 export async function POST(req: NextRequest) {
 
