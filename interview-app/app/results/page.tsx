@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import "./print.css";
 
 export default function ResultsPage() {
   const [results, setResults] = useState<any>(null);
@@ -20,10 +21,7 @@ export default function ResultsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          transcript,
-          interviewData,
-        }),
+        body: JSON.stringify({ transcript, interviewData }),
       });
 
       const data = await res.json();
@@ -33,31 +31,100 @@ export default function ResultsPage() {
     loadResults();
   }, []);
 
-  if (!results)
+  if (!results) {
     return (
       <div className="center">
         <h2>Evaluating interview...</h2>
       </div>
     );
+  }
 
   function downloadPDF() {
     window.print();
   }
 
+  const score = results.totalScore ?? results.score ?? 0;
+
   return (
     <div className="report">
-      <h1>Interview Results</h1>
+      {/* HEADER */}
+      <div className="certificateHeader">
+        <h1>Interview Evaluation Report</h1>
 
-      <div className="score">
-        Score: {results.score}%
+        <div className="scoreBadge">{score}%</div>
+
+        <button className="downloadBtn" onClick={downloadPDF}>
+          ⬇ DOWNLOAD REPORT (PDF)
+        </button>
+
+        <p className="submitMsg">
+          Submit this PDF in Canvas to receive credit.
+        </p>
       </div>
 
-      <button className="downloadBtn" onClick={downloadPDF}>
-        ⬇ Download PDF Certificate
-      </button>
+      {/* OVERALL FEEDBACK */}
+      <section className="section">
+        <h2>Overall Feedback</h2>
+        <p>{results.feedback}</p>
+      </section>
 
-      <h2>Overall Feedback</h2>
-      <p>{results.feedback}</p>
+      {/* TEACHER SUMMARY */}
+      {results.teacherSummary && (
+        <section className="section teacherBox">
+          <h2>Teacher Summary</h2>
+          <p>{results.teacherSummary}</p>
+        </section>
+      )}
+
+      {/* QUESTION FEEDBACK */}
+      {results.questions?.length > 0 && (
+        <section className="section">
+          <h2>Question-by-Question Evaluation</h2>
+
+          {results.questions.map((q: any, i: number) => (
+            <div key={i} className="questionCard">
+              <div className="questionHeader">
+                <span>Question {i + 1}</span>
+                <span className="miniScore">
+                  {q.score}/{q.maxScore}
+                </span>
+              </div>
+
+              <div className="questionText">{q.question}</div>
+
+              <div className="feedback">{q.feedback}</div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* IMPROVEMENT SUGGESTIONS */}
+      {results.suggestions?.length > 0 && (
+        <section className="section">
+          <h2>Improvement Suggestions</h2>
+          <ul>
+            {results.suggestions.map((s: string, i: number) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* ================= TRANSCRIPT ================= */}
+      <section className="section transcript">
+        <h2>Interview Transcript</h2>
+
+        {results.transcript?.map((t: any, i: number) => (
+          <div key={i} className="qa">
+            <strong>Question {i + 1}</strong>
+            <p>{t.question}</p>
+
+            <strong>Answer</strong>
+            <p>{t.answer}</p>
+          </div>
+        ))}
+      </section>
+
     </div>
   );
 }
