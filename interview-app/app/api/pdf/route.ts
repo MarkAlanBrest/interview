@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 
+
 export const runtime = "nodejs";
+
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -17,12 +19,39 @@ export async function POST(req: Request) {
             padding: 40px;
             color: #333;
           }
-          .header { text-align: center; margin-bottom: 40px; }
-          .score { font-size: 48px; font-weight: bold; color: #2a7ae2; margin-top: 10px; }
-          h2 { border-bottom: 2px solid #ddd; padding-bottom: 6px; margin-top: 40px; }
-          .section { margin-bottom: 20px; }
-          .question { margin-bottom: 15px; padding: 10px; border: 1px solid #eee; border-radius: 6px; }
-          .transcript-item { margin-bottom: 12px; }
+
+          .header {
+            text-align: center;
+            margin-bottom: 40px;
+          }
+
+          .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2a7ae2;
+            margin-top: 10px;
+          }
+
+          h2 {
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 6px;
+            margin-top: 40px;
+          }
+
+          .section {
+            margin-bottom: 20px;
+          }
+
+          .question {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+          }
+
+          .transcript-item {
+            margin-bottom: 12px;
+          }
         </style>
       </head>
 
@@ -37,37 +66,40 @@ export async function POST(req: Request) {
 
         ${
           results.teacherSummary
-            ? `<h2>Teacher Summary</h2><p>${results.teacherSummary}</p>`
+            ? `
+          <h2>Teacher Summary</h2>
+          <p>${results.teacherSummary}</p>
+        `
             : ""
         }
 
         ${
           results.questions?.length
             ? `
-              <h2>Question-by-Question Evaluation</h2>
-              ${results.questions
-                .map(
-                  (q: any, i: number) => `
-                <div class="question">
-                  <strong>Question ${i + 1} (${q.score}/${q.maxScore})</strong>
-                  <p>${q.question}</p>
-                  <p><em>${q.feedback}</em></p>
-                </div>
-              `
-                )
-                .join("")}
-            `
+          <h2>Question-by-Question Evaluation</h2>
+          ${results.questions
+            .map(
+              (q: any, i: number) => `
+            <div class="question">
+              <strong>Question ${i + 1} (${q.score}/${q.maxScore})</strong>
+              <p>${q.question}</p>
+              <p><em>${q.feedback}</em></p>
+            </div>
+          `
+            )
+            .join("")}
+        `
             : ""
         }
 
         ${
           results.suggestions?.length
             ? `
-              <h2>Improvement Suggestions</h2>
-              <ul>
-                ${results.suggestions.map((s: string) => `<li>${s}</li>`).join("")}
-              </ul>
-            `
+          <h2>Improvement Suggestions</h2>
+          <ul>
+            ${results.suggestions.map((s: string) => `<li>${s}</li>`).join("")}
+          </ul>
+        `
             : ""
         }
 
@@ -75,31 +107,31 @@ export async function POST(req: Request) {
         ${results.transcript
           .map(
             (t: any, i: number) => `
-            <div class="transcript-item">
-              <strong>Question ${i + 1}</strong>
-              <p>${t.question}</p>
-              <strong>Answer</strong>
-              <p>${t.answer}</p>
-            </div>
-          `
+          <div class="transcript-item">
+            <strong>Question ${i + 1}</strong>
+            <p>${t.question}</p>
+            <strong>Answer</strong>
+            <p>${t.answer}</p>
+          </div>
+        `
           )
           .join("")}
       </body>
     </html>
   `;
 
-  // REQUIRED for @sparticuz/chromium
-  chromium.setHeadlessMode = true;
-  chromium.setGraphicsMode = false;
+const browser = await puppeteer.launch({
+  args: chromium.args,
+  executablePath: await chromium.executablePath(),
+  headless: true, // ← use normal boolean
+});
 
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    executablePath: await chromium.executablePath(),
-    headless: true,
-  });
+
 
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: "networkidle0" });
+  
+
 
   const pdfBuffer = await page.pdf({
     format: "Letter",
@@ -109,7 +141,9 @@ export async function POST(req: Request) {
 
   await browser.close();
 
-  return new NextResponse(Buffer.from(pdfBuffer), {
+  const nodeBuffer = Buffer.from(pdfBuffer);
+
+  return new NextResponse(nodeBuffer, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
