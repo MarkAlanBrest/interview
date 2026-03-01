@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
     "@xenova/transformers": "^2.17.2",
     "html2pdf.js": "^0.14.0",
     "mammoth": "^1.11.0",
@@ -16,6 +17,7 @@
     "openai": "^6.25.0",
     "pdfjs-dist": "^5.5.207",
     "puppeteer": "^24.37.5",
+    "puppeteer-core": "^24.37.5",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
