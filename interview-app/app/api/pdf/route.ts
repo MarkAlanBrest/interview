@@ -130,14 +130,15 @@ export async function POST(req: Request) {
     margin: { top: "40px", bottom: "40px", left: "40px", right: "40px" },
   });
 
-  await browser.close();
+ await browser.close();
 
- return new NextResponse(pdfBuffer.buffer, {
+const blob = new Blob([pdfBuffer], { type: "application/pdf" });
 
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "attachment; filename=Interview_Report.pdf",
-    },
-  });
-}
+return new NextResponse(blob, {
+  status: 200,
+  headers: {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": "attachment; filename=Interview_Report.pdf",
+  },
+});
+
