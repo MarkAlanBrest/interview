@@ -132,7 +132,11 @@ export async function POST(req: Request) {
 
  await browser.close();
 
-const blob = new Blob([pdfBuffer], { type: "application/pdf" });
+const arrayBuffer = pdfBuffer instanceof Uint8Array
+  ? pdfBuffer.slice().buffer
+  : pdfBuffer;
+
+const blob = new Blob([arrayBuffer], { type: "application/pdf" });
 
 return new NextResponse(blob, {
   status: 200,
@@ -141,4 +145,5 @@ return new NextResponse(blob, {
     "Content-Disposition": "attachment; filename=Interview_Report.pdf",
   },
 });
+
 }
