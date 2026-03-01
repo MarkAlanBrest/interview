@@ -1,6 +1,8 @@
-// app/api/pdf/route.ts
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
+
+export const runtime = "nodejs";
+
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -123,6 +125,8 @@ export async function POST(req: Request) {
 
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: "networkidle0" });
+  await page.waitForNetworkIdle();
+
 
   const pdfBuffer = await page.pdf({
     format: "Letter",
