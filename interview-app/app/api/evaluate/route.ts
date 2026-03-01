@@ -1,16 +1,12 @@
 import OpenAI from "openai";
-import { NextRequest } from "next/server";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const { interviewData, transcript } = await req.json();
-
-    // ... your evaluation logic continues here
-
 
     /* =========================
        AI EVALUATION PROMPT

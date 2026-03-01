@@ -1,10 +1,11 @@
 import OpenAI from "openai";
-
-export async function POST(req) {
+import { NextRequest } from "next/server";
+export async function POST(req: NextRequest) {
   const { jobTitle, jobLevel, resumeText } = await req.json();
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
   const systemPrompt = `
 You are an AI Interview Generator for New Castle School of Trades.
 
