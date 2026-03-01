@@ -39,9 +39,24 @@ export default function ResultsPage() {
     );
   }
 
-  function downloadPDF() {
-    window.print();
-  }
+async function downloadPDF() {
+  const res = await fetch("/api/pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ results }),
+  });
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "Interview_Report.pdf";
+  a.click();
+
+  window.URL.revokeObjectURL(url);
+}
+
 
   const score = results.totalScore ?? results.score ?? 0;
 
