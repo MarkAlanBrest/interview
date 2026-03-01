@@ -4,7 +4,10 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(req: Request) {
+import { NextRequest } from "next/server";
+
+export async function POST(req: NextRequest) {
+
   try {
     const { interviewData, transcript } = await req.json();
 
