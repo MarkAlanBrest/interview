@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./print.css";
 
 export default function ResultsPage() {
   const [results, setResults] = useState<any>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadResults() {
@@ -39,12 +40,24 @@ export default function ResultsPage() {
     );
   }
 
+  const score = results.totalScore ?? 0;
+  const passed = results.passed;
+
 async function downloadPDF() {
+  if (!results) return;
+
   const res = await fetch("/api/pdf", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ results }),
   });
+
+  if (!res.ok) {
+    alert("Failed to generate PDF");
+    return;
+  }
 
   const blob = await res.blob();
   const url = window.URL.createObjectURL(blob);
@@ -58,32 +71,54 @@ async function downloadPDF() {
 }
 
 
-  const score = results.totalScore ?? results.score ?? 0;
-
   return (
-    <div className="report">
-      {/* HEADER */}
-      <div className="certificateHeader">
-        <h1>Interview Evaluation Report</h1>
+    <div ref={reportRef} className="report">
+
+      {/* ================= CERTIFICATE HEADER ================= */}
+
+      <div className={`certificateHeader ${passed ? "pass" : "fail"}`}>
+        <h1>
+          {passed
+            ? "Interview Completion Certificate"
+            : "Interview Practice Report"}
+        </h1>
 
         <div className="scoreBadge">{score}%</div>
 
+        <div className="points">
+          Points: {results.earnedPoints} / {results.possiblePoints}
+        </div>
+
+        <div className={`status ${passed ? "passed" : "retry"}`}>
+          {passed
+            ? "✅ Completion Standard Met"
+            : "⚠ Practice Attempt — Improve and Retry"}
+        </div>
+
         <button className="downloadBtn" onClick={downloadPDF}>
-          ⬇ DOWNLOAD REPORT (PDF)
+          ⬇ DOWNLOAD PDF
         </button>
 
         <p className="submitMsg">
-          Submit this PDF in Canvas to receive credit.
+          {passed
+            ? "Submit this certificate in Canvas for credit."
+            : "Review feedback and retry the interview to earn certification."}
         </p>
+
+        <div className="verify">
+          Verification Code: {results.verificationCode}
+        </div>
       </div>
 
-      {/* OVERALL FEEDBACK */}
+      {/* ================= OVERALL FEEDBACK ================= */}
+
       <section className="section">
         <h2>Overall Feedback</h2>
         <p>{results.feedback}</p>
       </section>
 
-      {/* TEACHER SUMMARY */}
+      {/* ================= TEACHER SUMMARY ================= */}
+
       {results.teacherSummary && (
         <section className="section teacherBox">
           <h2>Teacher Summary</h2>
@@ -91,7 +126,8 @@ async function downloadPDF() {
         </section>
       )}
 
-      {/* QUESTION FEEDBACK */}
+      {/* ================= QUESTION FEEDBACK ================= */}
+
       {results.questions?.length > 0 && (
         <section className="section">
           <h2>Question-by-Question Evaluation</h2>
@@ -106,14 +142,14 @@ async function downloadPDF() {
               </div>
 
               <div className="questionText">{q.question}</div>
-
               <div className="feedback">{q.feedback}</div>
             </div>
           ))}
         </section>
       )}
 
-      {/* IMPROVEMENT SUGGESTIONS */}
+      {/* ================= SUGGESTIONS ================= */}
+
       {results.suggestions?.length > 0 && (
         <section className="section">
           <h2>Improvement Suggestions</h2>
@@ -126,6 +162,7 @@ async function downloadPDF() {
       )}
 
       {/* ================= TRANSCRIPT ================= */}
+
       <section className="section transcript">
         <h2>Interview Transcript</h2>
 
@@ -139,7 +176,6 @@ async function downloadPDF() {
           </div>
         ))}
       </section>
-
     </div>
   );
 }

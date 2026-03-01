@@ -1,111 +1,229 @@
+/* ===============================
+   PAGE LAYOUT
+================================= */
+
 .report {
   max-width: 900px;
   margin: auto;
-  padding: 40px;
-  font-family: Arial;
-  line-height: 1.6;
+  padding: 50px;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.7;
+  color: #222;
+  background: white;
 }
 
-/* HEADER */
+/* ===============================
+   CERTIFICATE HEADER
+================================= */
+
 .certificateHeader {
   text-align: center;
+  padding-bottom: 30px;
+  border-bottom: 3px solid #e5e7eb;
   margin-bottom: 40px;
 }
 
-.scoreBadge {
-  font-size: 60px;
-  font-weight: bold;
-  color: #0b5ed7;
-  margin: 15px 0;
+.certificateHeader.pass {
+  background: #f0f8ff;
 }
 
-/* BIG BUTTON */
+.certificateHeader.fail {
+  background: #fff4f4;
+}
+
+.certificateHeader h1 {
+  font-size: 34px;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+/* BIG SCORE */
+
+.scoreBadge {
+  font-size: 72px;
+  font-weight: bold;
+  color: #0b5ed7;
+  margin: 10px 0 5px 0;
+}
+
+/* POINT SUMMARY */
+
+.points {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+/* PASS / RETRY STATUS */
+
+.status {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 18px;
+}
+
+.status.passed {
+  color: #198754;
+}
+
+.status.retry {
+  color: #c0392b;
+}
+
+/* ===============================
+   BIG DOWNLOAD BUTTON
+================================= */
+
 .downloadBtn {
   width: 100%;
-  padding: 20px;
+  padding: 22px;
   font-size: 24px;
   font-weight: bold;
   background: #0b5ed7;
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 15px;
+  transition: 0.2s ease;
 }
 
 .downloadBtn:hover {
-  background: #094bb5;
+  background: #084298;
+  transform: scale(1.01);
 }
 
 .submitMsg {
-  margin-top: 10px;
+  margin-top: 12px;
   font-weight: bold;
+  font-size: 15px;
 }
 
-/* SECTIONS */
-.section {
-  margin-top: 35px;
+/* VERIFICATION CODE */
+
+.verify {
+  margin-top: 18px;
+  font-size: 13px;
+  color: #666;
+  letter-spacing: 1px;
 }
+
+/* ===============================
+   SECTIONS
+================================= */
+
+.section {
+  margin-top: 40px;
+}
+
+.section h2 {
+  margin-bottom: 12px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 6px;
+}
+
+/* TEACHER BOX */
 
 .teacherBox {
   background: #f4f6f8;
   padding: 20px;
   border-radius: 10px;
+  border-left: 5px solid #0b5ed7;
 }
 
-/* QUESTION CARDS */
+/* ===============================
+   QUESTION CARDS
+================================= */
+
 .questionCard {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 18px;
-  margin-bottom: 18px;
+  border: 1px solid #e3e3e3;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
   background: #fafafa;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 .questionHeader {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-weight: bold;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .miniScore {
-  color: #0b5ed7;
+  background: #0b5ed7;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 14px;
 }
 
 .questionText {
+  font-weight: bold;
   margin-bottom: 10px;
 }
 
 .feedback {
   background: white;
-  padding: 10px;
-  border-radius: 6px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #eee;
 }
 
-/* TRANSCRIPT */
-.transcript summary {
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 18px;
+/* ===============================
+   TRANSCRIPT
+================================= */
+
+.transcript {
+  margin-top: 40px;
 }
 
 .qa {
-  margin-top: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
 }
 
-/* CENTER LOADING */
+.qa strong {
+  display: block;
+  margin-top: 10px;
+}
+
+/* ===============================
+   CENTER LOADING
+================================= */
+
 .center {
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 22px;
 }
 
-/* PRINT */
+/* ===============================
+   PRINT MODE (PDF)
+================================= */
+
 @media print {
+
+  body {
+    background: white;
+  }
+
   .downloadBtn,
   .submitMsg {
     display: none;
+  }
+
+  .report {
+    padding: 10px;
+    max-width: 100%;
+  }
+
+  .certificateHeader {
+    border-bottom: 2px solid black;
   }
 }
