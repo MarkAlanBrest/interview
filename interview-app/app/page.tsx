@@ -43,8 +43,9 @@ export default function StartPage() {
       reader.onload = async () => {
         const typedArray = new Uint8Array(reader.result as ArrayBuffer);
 
-       const pdfjsLib = await import("pdfjs-dist/build/pdf.js");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
+       const pdfjsLib = await import("pdfjs-dist");
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
+
 
     
 
