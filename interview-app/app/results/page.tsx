@@ -46,14 +46,42 @@ export default function ResultsPage() {
   const passed = results.passed;
 
   // ⭐ NEW — true client-side PDF generation (no print dialog)
-  async function downloadPDF() {
-    const element = reportRef.current;
-    if (!element) return;
+ async function downloadPDF() {
+  const element = reportRef.current;
+  if (!element) return;
 
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-    });
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+  });
+
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF("p", "mm", "letter");
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  const imgWidth = pageWidth;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  let heightLeft = imgHeight;
+  let position = 0;
+
+  // First page
+  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+  heightLeft -= pageHeight;
+
+  // Additional pages
+  while (heightLeft > 0) {
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+
+  pdf.save("Interview_Report.pdf");
+}
+
 
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF("p", "mm", "letter");
