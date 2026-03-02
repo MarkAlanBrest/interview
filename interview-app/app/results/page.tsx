@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import "./print.css";
 
 export default function ResultsPage() {
@@ -43,9 +45,24 @@ export default function ResultsPage() {
   const score = results.totalScore ?? 0;
   const passed = results.passed;
 
-  // ⭐ NEW — replaces the broken PDF API call
-  function downloadPDF() {
-    window.print();
+  // ⭐ NEW — true client-side PDF generation (no print dialog)
+  async function downloadPDF() {
+    const element = reportRef.current;
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "letter");
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
+    pdf.save("Interview_Report.pdf");
   }
 
   return (
@@ -72,9 +89,9 @@ export default function ResultsPage() {
             : "⚠ Practice Attempt — Improve and Retry"}
         </div>
 
-        {/* ⭐ NEW — print-to-PDF button */}
+        {/* ⭐ NEW — instant PDF download */}
         <button className="downloadBtn" onClick={downloadPDF}>
-          ⬇ DOWNLOAD / PRINT PDF
+          ⬇ DOWNLOAD PDF
         </button>
 
         <p className="submitMsg">
