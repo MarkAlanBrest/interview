@@ -18,7 +18,6 @@ export default function StartPage() {
 
     const ext = file.name.toLowerCase().split(".").pop();
 
-    // ⭐ DOCX (Mammoth)
     if (ext === "docx") {
       const mammoth = await import("mammoth");
       const arrayBuffer = await file.arrayBuffer();
@@ -28,7 +27,6 @@ export default function StartPage() {
       return;
     }
 
-    // ⭐ TXT
     if (ext === "txt") {
       const text = await file.text();
       setResumeText(text);
@@ -36,18 +34,14 @@ export default function StartPage() {
       return;
     }
 
-    // ⭐ PDF
     if (ext === "pdf") {
       const reader = new FileReader();
 
       reader.onload = async () => {
         const typedArray = new Uint8Array(reader.result as ArrayBuffer);
 
-       const pdfjsLib = await import("pdfjs-dist");
-pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
-
-
-    
+        const pdfjsLib = await import("pdfjs-dist");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
 
         const pdf = await pdfjsLib.getDocument(typedArray).promise;
         let fullText = "";
@@ -89,15 +83,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
   return (
     <main style={pageStyle}>
       <div style={cardStyle}>
-        <h1 style={{ marginBottom: 5 }}>New Castle School of Trades Interviewer</h1>
-        <p style={{ color: "#555", marginTop: 0 }}>
-          Upload your resume and select the job you want to practice interviewing for.
-        </p>
+
+        {/* BIGGER TITLE */}
+        <h1 style={titleStyle}>
+          New Castle School of Trades Interviewer
+        </h1>
 
         {/* JOB TITLE */}
-        <Section title="Job Title (Required)">
+        <Section title="For the job you are applying for, please enter the job title you want to practice interviewing for.">
           <input
-            placeholder="e.g., Welder, Carpenter, HVAC Technician"
+            placeholder="Example: Welder, Carpenter, HVAC Technician"
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
             style={inputStyle}
@@ -105,7 +100,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
         </Section>
 
         {/* JOB LEVEL */}
-        <Section title="Job Level (Required)">
+        <Section title="Select the experience level that best matches the position you are applying for.">
           <select
             value={jobLevel}
             onChange={(e) => setJobLevel(e.target.value)}
@@ -124,7 +119,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
         </Section>
 
         {/* RESUME UPLOAD */}
-        <Section title="Resume Upload (Required)">
+        <Section title="Upload your current resume so the interviewer can generate realistic questions based on your experience.">
           <input
             id="resumeFile"
             type="file"
@@ -150,9 +145,10 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
         {/* EXPECTATIONS */}
         <div style={noticeStyle}>
           <strong>Interview Expectations</strong>
-          <p>This interview is customized based on your resume and job selection.</p>
           <p>You may complete the interview as many times as needed.</p>
-          <p>A completion certificate is issued once a score of <b>80% or higher</b> is achieved.</p>
+          <p>
+            A completion certificate is issued once a score of <b>80% or higher</b> is achieved.
+          </p>
         </div>
 
         <button onClick={startInterview} style={buttonStyle}>
@@ -168,13 +164,20 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 25 }}>
-      <h3>{title}</h3>
+      <h3 style={{ fontWeight: 600 }}>{title}</h3>
       {children}
     </div>
   );
 }
 
 /* ---------- styles ---------- */
+
+const titleStyle = {
+  fontSize: 36,
+  fontWeight: "bold",
+  marginBottom: 20,
+  textAlign: "center" as const,
+};
 
 const pageStyle = {
   minHeight: "100vh",
