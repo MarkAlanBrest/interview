@@ -43,33 +43,10 @@ export default function ResultsPage() {
   const score = results.totalScore ?? 0;
   const passed = results.passed;
 
-async function downloadPDF() {
-  if (!results) return;
-
-  const res = await fetch("/api/pdf", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ results }),
-  });
-
-  if (!res.ok) {
-    alert("Failed to generate PDF");
-    return;
+  // ⭐ NEW — replaces the broken PDF API call
+  function downloadPDF() {
+    window.print();
   }
-
-  const blob = await res.blob();
-  const url = window.URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "Interview_Report.pdf";
-  a.click();
-
-  window.URL.revokeObjectURL(url);
-}
-
 
   return (
     <div ref={reportRef} className="report">
@@ -95,8 +72,9 @@ async function downloadPDF() {
             : "⚠ Practice Attempt — Improve and Retry"}
         </div>
 
+        {/* ⭐ NEW — print-to-PDF button */}
         <button className="downloadBtn" onClick={downloadPDF}>
-          ⬇ DOWNLOAD PDF
+          ⬇ DOWNLOAD / PRINT PDF
         </button>
 
         <p className="submitMsg">
