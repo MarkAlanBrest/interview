@@ -84,7 +84,6 @@ export default function StartPage() {
     <main style={pageStyle}>
       <div style={cardStyle}>
 
-        {/* BIGGER TITLE */}
         <h1 style={titleStyle}>
           New Castle School of Trades Interviewer
         </h1>
@@ -136,7 +135,7 @@ export default function StartPage() {
           </button>
 
           {resumeUploaded && (
-            <p style={{ color: "green", marginTop: 8, fontWeight: "bold" }}>
+            <p style={{ color: "#16a34a", marginTop: 8, fontWeight: "bold" }}>
               ✓ Resume uploaded successfully
             </p>
           )}
@@ -177,11 +176,12 @@ const titleStyle = {
   fontWeight: "bold",
   marginBottom: 20,
   textAlign: "center" as const,
+  color: "#1e293b",
 };
 
 const pageStyle = {
   minHeight: "100vh",
-  background: "#f4f6f8",
+  background: "#e5e7eb",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
@@ -191,7 +191,7 @@ const pageStyle = {
 
 const cardStyle = {
   width: 850,
-  background: "white",
+  background: "#ffffff",
   padding: 40,
   borderRadius: 12,
   boxShadow: "0 10px 28px rgba(0,0,0,0.15)",
@@ -203,13 +203,13 @@ const inputStyle: React.CSSProperties = {
   marginBottom: 12,
   fontSize: 16,
   borderRadius: 6,
-  border: "1px solid #ccc",
+  border: "1px solid #94a3b8",
 };
 
 const uploadButtonStyle = {
   marginTop: 10,
   padding: "10px 14px",
-  background: "#0b3c6d",
+  background: "#1e3a8a",
   color: "white",
   border: "none",
   borderRadius: 6,
@@ -219,11 +219,11 @@ const uploadButtonStyle = {
 
 const noticeStyle = {
   marginTop: 25,
-  background: "#f1f5f9",
+  background: "#e2e8f0",
   padding: 15,
   borderRadius: 8,
   fontSize: 14,
-  color: "#444",
+  color: "#1f2937",
 };
 
 const buttonStyle = {
@@ -231,7 +231,7 @@ const buttonStyle = {
   marginTop: 25,
   padding: 14,
   fontSize: 18,
-  background: "#0b3c6d",
+  background: "#1e3a8a",
   color: "white",
   border: "none",
   borderRadius: 8,
