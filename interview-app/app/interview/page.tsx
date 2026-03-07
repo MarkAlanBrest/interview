@@ -110,16 +110,19 @@ export default function InterviewPage() {
 
     setAnswer("");
 
+    // If finished all 10 questions → go to results
     if (updatedTranscript.length >= 10) {
       window.location.href = "/results";
       return;
     }
 
+    // Load next question
     const nextIndex = questionIndex + 1;
     setQuestionIndex(nextIndex);
     setQuestion(questions[nextIndex]);
   }
 
+  /* ------------------ UI ------------------ */
   return (
     <main
       style={{
@@ -127,16 +130,16 @@ export default function InterviewPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#e5e7eb",
+        backgroundColor: "#f4f6f8",
         fontFamily: "Arial",
-        paddingBottom: "40px",
+        paddingBottom: "40px", // ← NEW SPACING FIX
       }}
     >
       <div
         style={{
           width: "1200px",
           height: "90vh",
-          background: "#ffffff",
+          background: "white",
           borderRadius: "12px",
           boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
           display: "flex",
@@ -154,7 +157,7 @@ export default function InterviewPage() {
             paddingTop: "20px",
             paddingLeft: "30px",
             paddingRight: "30px",
-            background: "#e2e8f0",
+            background: "#fafafa",
           }}
         >
           <h2
@@ -163,12 +166,13 @@ export default function InterviewPage() {
               marginBottom: "10px",
               fontSize: "22px",
               fontWeight: "bold",
-              color: "#1e3a8a",
+              color: "#0b3c6d",
             }}
           >
             Interviewer Talking Text
           </h2>
 
+          {/* VOICE DROPDOWN */}
           <select
             value={selectedVoice}
             onChange={(e) => setSelectedVoice(e.target.value)}
@@ -176,7 +180,7 @@ export default function InterviewPage() {
               padding: "10px",
               fontSize: "16px",
               borderRadius: "8px",
-              border: "1px solid #94a3b8",
+              border: "1px solid #ccc",
               marginBottom: "15px",
               width: "260px",
             }}
@@ -189,6 +193,7 @@ export default function InterviewPage() {
             ))}
           </select>
 
+          {/* IMAGE */}
           <img
             src={voiceImages[selectedVoice] || voiceImages.default}
             alt="Interviewer"
@@ -202,17 +207,17 @@ export default function InterviewPage() {
             }}
           />
 
+          {/* QUESTION BOX */}
           <div
             style={{
               marginTop: "20px",
-              background: "#ffffff",
+              background: "white",
               padding: "20px 30px",
               borderRadius: "10px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               fontSize: "20px",
               textAlign: "center",
               maxWidth: "600px",
-              color: "#1f2937",
             }}
           >
             {question}
@@ -223,14 +228,12 @@ export default function InterviewPage() {
         <div
           style={{
             flex: 1,
-            borderLeft: "1px solid #94a3b8",
+            borderLeft: "1px solid #ddd",
             padding: "20px",
             overflowY: "auto",
-            color: "#1f2937",
           }}
         >
-          <h3 style={{ color: "#1e3a8a" }}>Interview Transcript</h3>
-
+          <h3>Interview Transcript</h3>
           {transcript.map((item, i) => (
             <div key={i} style={{ marginBottom: 20 }}>
               <strong>Q:</strong>
@@ -248,7 +251,7 @@ export default function InterviewPage() {
           position: "fixed",
           bottom: "20px",
           width: "1200px",
-          background: "#ffffff",
+          background: "white",
           padding: "15px",
           borderRadius: "10px",
           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
@@ -265,12 +268,13 @@ export default function InterviewPage() {
             flex: 1,
             height: 80,
             fontSize: 16,
-            border: "2px solid #94a3b8",
+            border: "2px solid #0078ff",
             borderRadius: "8px",
             padding: "10px",
           }}
         />
 
+        {/* 🔥 YOUR POPUP BUTTON IS BACK */}
         <button
           onClick={() => {
             answerRef.current?.focus();
@@ -287,7 +291,7 @@ export default function InterviewPage() {
           }}
           style={{
             padding: "12px 22px",
-            background: "#1e3a8a",
+            background: "#0057ff",
             color: "white",
             fontWeight: "bold",
             borderRadius: "10px",
@@ -304,7 +308,7 @@ export default function InterviewPage() {
           onClick={submitAnswer}
           style={{
             padding: "10px 20px",
-            background: "#16a34a",
+            background: "#28a745",
             color: "white",
             fontWeight: "bold",
             borderRadius: "8px",
@@ -339,7 +343,7 @@ export default function InterviewPage() {
             position: "fixed",
             bottom: "120px",
             right: "40px",
-            background: "#ffffff",
+            background: "white",
             padding: "25px",
             borderRadius: "12px",
             boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
@@ -348,8 +352,7 @@ export default function InterviewPage() {
             animation: "popIn 0.25s ease-out",
           }}
         >
-          <h3 style={{ color: "#1e3a8a" }}>Use Voice Typing</h3>
-
+          <h3>Use Voice Typing</h3>
           <p>You can use your device’s built-in speech-to-text:</p>
 
           <ul>
@@ -368,7 +371,7 @@ export default function InterviewPage() {
             style={{
               marginTop: "10px",
               padding: "8px 12px",
-              background: "#e2e8f0",
+              background: "#ddd",
               borderRadius: "6px",
               cursor: "pointer",
             }}
