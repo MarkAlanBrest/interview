@@ -61,10 +61,12 @@ export default function InterviewPage() {
         return;
       }
 
-      const questionList = data.questions
-        .split("\n")
-        .map((q: string) => q.trim())
-        .filter((q: string) => q.length > 0);
+   const questionList = data.questions
+  .split("\n")
+  .map((q: string) =>
+    q.trim().replace(/^\d+[\).\s-]*/, "") // removes 1. 2) 3 -
+  )
+  .filter((q: string) => q.length > 0);
 
       if (questionList.length === 0) {
         setQuestion("No questions received");
@@ -130,8 +132,7 @@ export default function InterviewPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f4f6f8",
-        fontFamily: "Arial",
+background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "Arial",
         paddingBottom: "40px", // ← NEW SPACING FIX
       }}
     >
@@ -234,14 +235,15 @@ export default function InterviewPage() {
           }}
         >
           <h3>Interview Transcript</h3>
-          {transcript.map((item, i) => (
-            <div key={i} style={{ marginBottom: 20 }}>
-              <strong>Q:</strong>
-              <div>{item.question}</div>
-              <strong>A:</strong>
-              <div>{item.answer}</div>
-            </div>
-          ))}
+        {transcript.map((item, i) => (
+  <div key={i} style={{ marginBottom: 20 }}>
+    <strong>Question {i + 1}</strong>
+    <div>{item.question}</div>
+
+    <strong>Answer</strong>
+    <div>{item.answer}</div>
+  </div>
+))}
         </div>
       </div>
 
