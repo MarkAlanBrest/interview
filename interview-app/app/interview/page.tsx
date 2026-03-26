@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-
 export default function InterviewPage() {
   const [questions, setQuestions] = useState<string[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -17,13 +16,6 @@ export default function InterviewPage() {
   const [showVoiceHelp, setShowVoiceHelp] = useState(false);
 
   const answerRef = useRef<HTMLTextAreaElement>(null);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-const chunksRef = useRef<Blob[]>([]);
-
-const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-const [recording, setRecording] = useState(false);
-const [videoURL, setVideoURL] = useState<string | null>(null);
 
   const voiceImages: Record<string, string> = {
     default: "/images/interviewer.png",
@@ -126,53 +118,11 @@ const [videoURL, setVideoURL] = useState<string | null>(null);
       return;
     }
 
-
-
-
-
     // Load next question
     const nextIndex = questionIndex + 1;
     setQuestionIndex(nextIndex);
     setQuestion(questions[nextIndex]);
   }
-
-
-/* ------------------ VIDEO RECORDING ------------------ */
-
-async function startRecording() {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: true,
-  });
-
-  if (videoRef.current) {
-    videoRef.current.srcObject = stream;
-  }
-
-  const recorder = new MediaRecorder(stream);
-  chunksRef.current = [];
-
-  recorder.ondataavailable = (e) => {
-    if (e.data.size > 0) chunksRef.current.push(e.data);
-  };
-
-  recorder.onstop = () => {
-    const blob = new Blob(chunksRef.current, { type: "video/webm" });
-    const url = URL.createObjectURL(blob);
-    setVideoURL(url);
-
-    stream.getTracks().forEach((track) => track.stop());
-  };
-
-  recorder.start();
-  setMediaRecorder(recorder);
-  setRecording(true);
-}
-
-function stopRecording() {
-  mediaRecorder?.stop();
-  setRecording(false);
-}
 
   /* ------------------ UI ------------------ */
   return (
@@ -211,10 +161,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
             background: "#fafafa",
           }}
         >
-
-
-
-
           <h2
             style={{
               marginTop: 0,
@@ -249,14 +195,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           </select>
 
           {/* IMAGE */}
-
-
-
-
-
-
-
-
           <img
             src={voiceImages[selectedVoice] || voiceImages.default}
             alt="Interviewer"
@@ -284,6 +222,7 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
             }}
           >
             {question}
+          </div>
         </div>
 
         {/* TRANSCRIPT */}
@@ -296,91 +235,23 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           }}
         >
           <h3>Interview Transcript</h3>
+        {transcript.map((item, i) => (
+  <div key={i} style={{ marginBottom: 20 }}>
+    <strong>Question {i + 1}</strong>
+    <div>{item.question}</div>
 
-          {transcript.map((item, i) => (
-            <div key={i} style={{ marginBottom: 20 }}>
-              <strong>Question {i + 1}</strong>
-              <div>{item.question}</div>
-
-              <strong>Answer</strong>
-              <div>{item.answer}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* VIDEO PANEL */}
-        <div
-          style={{
-            flex: 1,
-            borderLeft: "1px solid #ddd",
-            padding: "20px",
-            background: "#f8fafc",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <h3 style={{ marginTop: 0, marginBottom: "15px", color: "#0b3c6d" }}>
-            Video Response
-          </h3>
-
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            style={{
-              width: "100%",
-              borderRadius: "10px",
-              background: "black",
-              marginBottom: "10px",
-            }}
-          />
-
-          {videoURL && (
-            <video
-              src={videoURL}
-              controls
-              style={{
-                width: "100%",
-                borderRadius: "10px",
-                marginBottom: "10px",
-              }}
-            />
-          )}
-
-          <div style={{ marginTop: "auto" }}>
-            {!recording ? (
-              <button onClick={startRecording}>🎥 Start Recording</button>
-            ) : (
-              <button onClick={stopRecording}>⏹ Stop Recording</button>
-            )}
-          </div>
-        </div>
+    <strong>Answer</strong>
+    <div>{item.answer}</div>
+  </div>
+))}
         </div>
       </div>
 
-
-
-
-
-
-
-
-
-
       {/* ANSWER BAR */}
-
-
-
-
-      {/* ANSWER BAR */}
-
-
       <div
         style={{
           position: "fixed",
           bottom: "20px",
-
-
           width: "1200px",
           background: "white",
           padding: "15px",
@@ -511,8 +382,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           </button>
         </div>
       )}
-
-
 
       <style jsx>{`
         @keyframes popIn {
