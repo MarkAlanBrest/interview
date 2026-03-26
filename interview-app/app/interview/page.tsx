@@ -211,6 +211,10 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
             background: "#fafafa",
           }}
         >
+
+
+
+
           <h2
             style={{
               marginTop: 0,
@@ -245,6 +249,14 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           </select>
 
           {/* IMAGE */}
+
+
+
+
+
+
+
+
           <img
             src={voiceImages[selectedVoice] || voiceImages.default}
             alt="Interviewer"
@@ -272,7 +284,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
             }}
           >
             {question}
-          </div>
         </div>
 
         {/* TRANSCRIPT */}
@@ -285,74 +296,91 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           }}
         >
           <h3>Interview Transcript</h3>
-        {transcript.map((item, i) => (
-  <div key={i} style={{ marginBottom: 20 }}>
-    <strong>Question {i + 1}</strong>
-    <div>{item.question}</div>
 
-    <strong>Answer</strong>
-    <div>{item.answer}</div>
-  </div>
-))}
+          {transcript.map((item, i) => (
+            <div key={i} style={{ marginBottom: 20 }}>
+              <strong>Question {i + 1}</strong>
+              <div>{item.question}</div>
+
+              <strong>Answer</strong>
+              <div>{item.answer}</div>
+            </div>
+          ))}
         </div>
-      </div>
 
-      {/* VIDEO RECORDER */}
-      <div
-        style={{
-          position: "fixed",
-          top: "20px",
-          right: "20px",
-          zIndex: 10,
-        }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
+        {/* VIDEO PANEL */}
+        <div
           style={{
-            width: "260px",
-            borderRadius: "10px",
-            background: "black",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            flex: 1,
+            borderLeft: "1px solid #ddd",
+            padding: "20px",
+            background: "#f8fafc",
+            display: "flex",
+            flexDirection: "column",
           }}
-        />
+        >
+          <h3 style={{ marginTop: 0, marginBottom: "15px", color: "#0b3c6d" }}>
+            Video Response
+          </h3>
 
-        {videoURL && (
           <video
-            src={videoURL}
-            controls
+            ref={videoRef}
+            autoPlay
+            muted
             style={{
-              width: "260px",
-              marginTop: "10px",
+              width: "100%",
               borderRadius: "10px",
+              background: "black",
+              marginBottom: "10px",
             }}
           />
-        )}
 
-        <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
-          {!recording ? (
-            <button onClick={startRecording}>
-              🎥 Record
-            </button>
-          ) : (
-            <button onClick={stopRecording}>
-              ⏹ Stop
-            </button>
+          {videoURL && (
+            <video
+              src={videoURL}
+              controls
+              style={{
+                width: "100%",
+                borderRadius: "10px",
+                marginBottom: "10px",
+              }}
+            />
           )}
+
+          <div style={{ marginTop: "auto" }}>
+            {!recording ? (
+              <button onClick={startRecording}>🎥 Start Recording</button>
+            ) : (
+              <button onClick={stopRecording}>⏹ Stop Recording</button>
+            )}
+          </div>
+        </div>
         </div>
       </div>
 
+
+
+
+
+
+
+
+
+
       {/* ANSWER BAR */}
 
 
 
 
       {/* ANSWER BAR */}
+
+
       <div
         style={{
           position: "fixed",
           bottom: "20px",
+
+
           width: "1200px",
           background: "white",
           padding: "15px",
