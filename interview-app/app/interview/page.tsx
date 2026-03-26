@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+
 export default function InterviewPage() {
   const [questions, setQuestions] = useState<string[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -16,6 +17,13 @@ export default function InterviewPage() {
   const [showVoiceHelp, setShowVoiceHelp] = useState(false);
 
   const answerRef = useRef<HTMLTextAreaElement>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+const chunksRef = useRef<Blob[]>([]);
+
+const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+const [recording, setRecording] = useState(false);
+const [videoURL, setVideoURL] = useState<string | null>(null);
 
   const voiceImages: Record<string, string> = {
     default: "/images/interviewer.png",
@@ -118,11 +126,53 @@ export default function InterviewPage() {
       return;
     }
 
+
+
+
+
     // Load next question
     const nextIndex = questionIndex + 1;
     setQuestionIndex(nextIndex);
     setQuestion(questions[nextIndex]);
   }
+
+
+/* ------------------ VIDEO RECORDING ------------------ */
+
+async function startRecording() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true,
+  });
+
+  if (videoRef.current) {
+    videoRef.current.srcObject = stream;
+  }
+
+  const recorder = new MediaRecorder(stream);
+  chunksRef.current = [];
+
+  recorder.ondataavailable = (e) => {
+    if (e.data.size > 0) chunksRef.current.push(e.data);
+  };
+
+  recorder.onstop = () => {
+    const blob = new Blob(chunksRef.current, { type: "video/webm" });
+    const url = URL.createObjectURL(blob);
+    setVideoURL(url);
+
+    stream.getTracks().forEach((track) => track.stop());
+  };
+
+  recorder.start();
+  setMediaRecorder(recorder);
+  setRecording(true);
+}
+
+function stopRecording() {
+  mediaRecorder?.stop();
+  setRecording(false);
+}
 
   /* ------------------ UI ------------------ */
   return (
@@ -246,6 +296,57 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
 ))}
         </div>
       </div>
+
+      {/* VIDEO RECORDER */}
+      <div
+        style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          zIndex: 10,
+        }}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          style={{
+            width: "260px",
+            borderRadius: "10px",
+            background: "black",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          }}
+        />
+
+        {videoURL && (
+          <video
+            src={videoURL}
+            controls
+            style={{
+              width: "260px",
+              marginTop: "10px",
+              borderRadius: "10px",
+            }}
+          />
+        )}
+
+        <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
+          {!recording ? (
+            <button onClick={startRecording}>
+              🎥 Record
+            </button>
+          ) : (
+            <button onClick={stopRecording}>
+              ⏹ Stop
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ANSWER BAR */}
+
+
+
 
       {/* ANSWER BAR */}
       <div
@@ -382,6 +483,8 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           </button>
         </div>
       )}
+
+
 
       <style jsx>{`
         @keyframes popIn {
