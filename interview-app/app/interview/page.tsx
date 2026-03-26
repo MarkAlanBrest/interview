@@ -17,16 +17,20 @@ export default function InterviewPage() {
 
   const answerRef = useRef<HTMLTextAreaElement>(null);
 
-  /* ------------------ NEW VIDEO RECORDING STATE ------------------ */
+  /* ----------------------------------------------------------
+     NEW VIDEO RECORDING STATE + PREVIEW REF
+  ---------------------------------------------------------- */
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [videoURL, setVideoURL] = useState<string | null>(null);
   const [showPlayback, setShowPlayback] = useState(false);
+  const [interviewComplete, setInterviewComplete] = useState(false);
 
   const previewRef = useRef<HTMLVideoElement>(null);
 
-  const [interviewComplete, setInterviewComplete] = useState(false);
-
+  /* ----------------------------------------------------------
+     VOICE IMAGE MAP (unchanged)
+  ---------------------------------------------------------- */
   const voiceImages: Record<string, string> = {
     default: "/images/interviewer.png",
     Matthew: "/images/interviewer.png",
@@ -35,7 +39,9 @@ export default function InterviewPage() {
     Amy: "/images/interviewer.png",
   };
 
-  /* ------------------ LOAD VOICES ------------------ */
+  /* ----------------------------------------------------------
+     LOAD VOICES (unchanged)
+  ---------------------------------------------------------- */
   useEffect(() => {
     function loadVoices() {
       const v = window.speechSynthesis.getVoices();
@@ -45,8 +51,9 @@ export default function InterviewPage() {
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
-  /* ------------------ VIDEO RECORDING FUNCTIONS ------------------ */
-
+  /* ----------------------------------------------------------
+     VIDEO RECORDING: START
+  ---------------------------------------------------------- */
   async function startRecording() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -54,6 +61,7 @@ export default function InterviewPage() {
         audio: true,
       });
 
+      // Attach stream to preview window
       if (previewRef.current) {
         previewRef.current.srcObject = stream;
         previewRef.current.play();
@@ -80,6 +88,9 @@ export default function InterviewPage() {
     }
   }
 
+  /* ----------------------------------------------------------
+     VIDEO RECORDING: STOP
+  ---------------------------------------------------------- */
   function stopRecording() {
     try {
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
@@ -96,6 +107,9 @@ export default function InterviewPage() {
     }
   }
 
+  /* ----------------------------------------------------------
+     VIDEO RECORDING: SAVE TO FILE
+  ---------------------------------------------------------- */
   function saveRecording() {
     if (!videoURL) return;
     const a = document.createElement("a");
@@ -104,12 +118,16 @@ export default function InterviewPage() {
     a.click();
   }
 
-  /* ------------------ CLEANUP ON UNMOUNT ------------------ */
+  /* ----------------------------------------------------------
+     CLEANUP ON UNMOUNT
+  ---------------------------------------------------------- */
   useEffect(() => {
     return () => stopRecording();
   }, []);
 
-  /* ------------------ LOAD QUESTIONS ------------------ */
+  /* ----------------------------------------------------------
+     LOAD QUESTIONS (unchanged)
+  ---------------------------------------------------------- */
   useEffect(() => {
     loadQuestions();
   }, []);
@@ -157,47 +175,6 @@ export default function InterviewPage() {
       setQuestion("Unable to load questions. Try again.");
     }
   }
-
-  /* ------------------ READ QUESTION ALOUD ------------------ */
-  useEffect(() => {
-    if (!question || question.includes("Loading")) return;
-
-    const utterance = new SpeechSynthesisUtterance(question);
-    const voice = voices.find((v) => v.name === selectedVoice);
-    if (voice) utterance.voice = voice;
-
-    utterance.lang = "en-US";
-    utterance.rate = 0.95;
-    utterance.pitch = 1.02;
-
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-  }, [question, selectedVoice, voices]);
-
-  /* ------------------ SUBMIT ANSWER ------------------ */
-  async function submitAnswer() {
-    if (!answer.trim()) return;
-
-    const updatedTranscript = [...transcript, { question, answer }];
-    setTranscript(updatedTranscript);
-
-    sessionStorage.setItem(
-      "interviewTranscript",
-      JSON.stringify(updatedTranscript)
-    );
-
-    setAnswer("");
-
-    if (updatedTranscript.length >= 10) {
-      setInterviewComplete(true);
-      return;
-    }
-
-    const nextIndex = questionIndex + 1;
-    setQuestionIndex(nextIndex);
-    setQuestion(questions[nextIndex]);
-  }
-
   /* ------------------ UI ------------------ */
   return (
     <main
@@ -213,7 +190,7 @@ export default function InterviewPage() {
     >
       <div
         style={{
-          width: "1500px",
+          width: "1500px", // widened to fit new left panel
           height: "90vh",
           background: "white",
           borderRadius: "12px",
@@ -222,7 +199,9 @@ export default function InterviewPage() {
           overflow: "hidden",
         }}
       >
-        {/* ------------------ NEW RECORDING PANEL ------------------ */}
+        {/* ----------------------------------------------------------
+            NEW LEFT RECORDING PANEL
+        ---------------------------------------------------------- */}
         <div
           style={{
             width: "300px",
@@ -237,7 +216,7 @@ export default function InterviewPage() {
         >
           <h3 style={{ marginTop: 0 }}>Recording Panel</h3>
 
-          {/* Small Preview */}
+          {/* Small Live Preview */}
           <video
             ref={previewRef}
             muted
@@ -250,6 +229,7 @@ export default function InterviewPage() {
             }}
           />
 
+          {/* Record Button */}
           <button
             onClick={startRecording}
             style={{
@@ -265,6 +245,7 @@ export default function InterviewPage() {
             ▶️ Record Interview
           </button>
 
+          {/* Stop Button */}
           <button
             onClick={stopRecording}
             style={{
@@ -280,6 +261,7 @@ export default function InterviewPage() {
             ⏹ Stop Recording
           </button>
 
+          {/* Playback Button */}
           <button
             onClick={() => setShowPlayback(true)}
             disabled={!videoURL}
@@ -296,6 +278,7 @@ export default function InterviewPage() {
             🎥 Play Back Interview
           </button>
 
+          {/* Save Button */}
           <button
             onClick={saveRecording}
             disabled={!videoURL}
@@ -313,7 +296,9 @@ export default function InterviewPage() {
           </button>
         </div>
 
-        {/* ------------------ INTERVIEWER PANEL ------------------ */}
+        {/* ----------------------------------------------------------
+            ORIGINAL INTERVIEWER PANEL (UNCHANGED)
+        ---------------------------------------------------------- */}
         <div
           style={{
             flex: 2,
@@ -339,6 +324,7 @@ export default function InterviewPage() {
             Interviewer Talking Text
           </h2>
 
+          {/* VOICE DROPDOWN */}
           <select
             value={selectedVoice}
             onChange={(e) => setSelectedVoice(e.target.value)}
@@ -359,6 +345,7 @@ export default function InterviewPage() {
             ))}
           </select>
 
+          {/* INTERVIEWER IMAGE */}
           <img
             src={voiceImages[selectedVoice] || voiceImages.default}
             alt="Interviewer"
@@ -372,6 +359,7 @@ export default function InterviewPage() {
             }}
           />
 
+          {/* QUESTION BOX */}
           <div
             style={{
               marginTop: "20px",
@@ -387,8 +375,9 @@ export default function InterviewPage() {
             {question}
           </div>
         </div>
-
-        {/* ------------------ TRANSCRIPT PANEL ------------------ */}
+        {/* ----------------------------------------------------------
+            TRANSCRIPT PANEL (RIGHT SIDE)
+        ---------------------------------------------------------- */}
         <div
           style={{
             flex: 1,
@@ -398,10 +387,12 @@ export default function InterviewPage() {
           }}
         >
           <h3>Interview Transcript</h3>
+
           {transcript.map((item, i) => (
             <div key={i} style={{ marginBottom: 20 }}>
               <strong>Question {i + 1}</strong>
               <div>{item.question}</div>
+
               <strong>Answer</strong>
               <div>{item.answer}</div>
             </div>
@@ -409,7 +400,9 @@ export default function InterviewPage() {
         </div>
       </div>
 
-      {/* ------------------ ANSWER BAR ------------------ */}
+      {/* ----------------------------------------------------------
+          ANSWER BAR (BOTTOM FIXED)
+      ---------------------------------------------------------- */}
       <div
         style={{
           position: "fixed",
@@ -423,6 +416,7 @@ export default function InterviewPage() {
           gap: "10px",
         }}
       >
+        {/* TEXTAREA FOR ANSWERS */}
         <textarea
           ref={answerRef}
           value={answer}
@@ -438,15 +432,18 @@ export default function InterviewPage() {
           }}
         />
 
+        {/* VOICE TYPING POPUP BUTTON (UNCHANGED) */}
         <button
           onClick={() => {
             answerRef.current?.focus();
             answerRef.current?.select();
+
             const keyboardEvent = new KeyboardEvent("keydown", {
               key: "d",
               code: "KeyD",
               bubbles: true,
             });
+
             answerRef.current?.dispatchEvent(keyboardEvent);
             setShowVoiceHelp(true);
           }}
@@ -465,6 +462,7 @@ export default function InterviewPage() {
           🎤 Start Voice Recording
         </button>
 
+        {/* SUBMIT ANSWER BUTTON */}
         <button
           onClick={submitAnswer}
           style={{
@@ -480,6 +478,7 @@ export default function InterviewPage() {
           Submit Answer
         </button>
 
+        {/* NEXT BUTTON — ONLY SHOWS WHEN INTERVIEW COMPLETE */}
         {interviewComplete && (
           <button
             onClick={() => (window.location.href = "/results")}
@@ -497,10 +496,12 @@ export default function InterviewPage() {
           </button>
         )}
       </div>
-
-      {/* ------------------ PLAYBACK MODAL ------------------ */}
+      {/* ----------------------------------------------------------
+          PLAYBACK MODAL (VIDEO REVIEW)
+      ---------------------------------------------------------- */}
       {showPlayback && (
         <>
+          {/* Dark overlay */}
           <div
             onClick={() => setShowPlayback(false)}
             style={{
@@ -514,6 +515,7 @@ export default function InterviewPage() {
             }}
           />
 
+          {/* Modal box */}
           <div
             style={{
               position: "fixed",
@@ -563,7 +565,9 @@ export default function InterviewPage() {
         </>
       )}
 
-      {/* ------------------ VOICE HELP POPUP ------------------ */}
+      {/* ----------------------------------------------------------
+          VOICE HELP OVERLAY
+      ---------------------------------------------------------- */}
       {showVoiceHelp && (
         <div
           onClick={() => setShowVoiceHelp(false)}
@@ -579,6 +583,9 @@ export default function InterviewPage() {
         />
       )}
 
+      {/* ----------------------------------------------------------
+          VOICE HELP POPUP
+      ---------------------------------------------------------- */}
       {showVoiceHelp && (
         <div
           style={{
@@ -596,6 +603,48 @@ export default function InterviewPage() {
         >
           <h3>Use Voice Typing</h3>
           <p>You can use your device’s built-in speech-to-text:</p>
+
           <ul>
             <li><strong>Chromebook:</strong> Search + D</li>
-            <li><strong>Windows:</strong> Windows + H
+            <li><strong>Windows:</strong> Windows + H</li>
+            <li><strong>Mac:</strong> Fn twice</li>
+            <li><strong>iPhone/iPad:</strong> Keyboard mic</li>
+            <li><strong>Android:</strong> Keyboard mic</li>
+          </ul>
+
+          <button
+            onClick={() => {
+              setShowVoiceHelp(false);
+              setTimeout(() => answerRef.current?.focus(), 50);
+            }}
+            style={{
+              marginTop: "10px",
+              padding: "8px 12px",
+              background: "#ddd",
+              borderRadius: "6px",
+              cursor: "pointer",
+            }}
+          >
+            Close
+          </button>
+        </div>
+      )}
+
+      {/* ----------------------------------------------------------
+          POP-IN ANIMATION
+      ---------------------------------------------------------- */}
+      <style jsx>{`
+        @keyframes popIn {
+          0% {
+            transform: scale(0.85);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </main>
+  );
+}
