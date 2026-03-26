@@ -17,6 +17,16 @@ export default function InterviewPage() {
 
   const answerRef = useRef<HTMLTextAreaElement>(null);
 
+  /* ------------------ NEW VIDEO RECORDING STATE ------------------ */
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [videoURL, setVideoURL] = useState<string | null>(null);
+  const [showPlayback, setShowPlayback] = useState(false);
+
+  const previewRef = useRef<HTMLVideoElement>(null);
+
+  const [interviewComplete, setInterviewComplete] = useState(false);
+
   const voiceImages: Record<string, string> = {
     default: "/images/interviewer.png",
     Matthew: "/images/interviewer.png",
@@ -35,14 +45,80 @@ export default function InterviewPage() {
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
-  /* ------------------ LOAD QUESTIONS ONCE ------------------ */
+  /* ------------------ VIDEO RECORDING FUNCTIONS ------------------ */
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      if (previewRef.current) {
+        previewRef.current.srcObject = stream;
+        previewRef.current.play();
+      }
+
+      const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        setVideoURL(url);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setMediaStream(stream);
+    } catch (err) {
+      console.error("Error starting video recording:", err);
+    }
+  }
+
+  function stopRecording() {
+    try {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((t) => t.stop());
+      }
+      if (previewRef.current) {
+        previewRef.current.srcObject = null;
+      }
+    } catch (err) {
+      console.error("Error stopping video recording:", err);
+    }
+  }
+
+  function saveRecording() {
+    if (!videoURL) return;
+    const a = document.createElement("a");
+    a.href = videoURL;
+    a.download = "interview_recording.webm";
+    a.click();
+  }
+
+  /* ------------------ CLEANUP ON UNMOUNT ------------------ */
+  useEffect(() => {
+    return () => stopRecording();
+  }, []);
+
+  /* ------------------ LOAD QUESTIONS ------------------ */
   useEffect(() => {
     loadQuestions();
   }, []);
 
   async function loadQuestions() {
     try {
-      const stored = JSON.parse(sessionStorage.getItem("interviewData") || "{}");
+      const stored = JSON.parse(
+        sessionStorage.getItem("interviewData") || "{}"
+      );
 
       const res = await fetch("/api/interview", {
         method: "POST",
@@ -61,12 +137,12 @@ export default function InterviewPage() {
         return;
       }
 
-   const questionList = data.questions
-  .split("\n")
-  .map((q: string) =>
-    q.trim().replace(/^\d+[\).\s-]*/, "") // removes 1. 2) 3 -
-  )
-  .filter((q: string) => q.length > 0);
+      const questionList = data.questions
+        .split("\n")
+        .map((q: string) =>
+          q.trim().replace(/^\d+[).\s-]*/, "")
+        )
+        .filter((q: string) => q.length > 0);
 
       if (questionList.length === 0) {
         setQuestion("No questions received");
@@ -112,13 +188,11 @@ export default function InterviewPage() {
 
     setAnswer("");
 
-    // If finished all 10 questions → go to results
     if (updatedTranscript.length >= 10) {
-      window.location.href = "/results";
+      setInterviewComplete(true);
       return;
     }
 
-    // Load next question
     const nextIndex = questionIndex + 1;
     setQuestionIndex(nextIndex);
     setQuestion(questions[nextIndex]);
@@ -132,13 +206,14 @@ export default function InterviewPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "Arial",
-        paddingBottom: "40px", // ← NEW SPACING FIX
+        background: "linear-gradient(to bottom, #cbd5e1, #64748b)",
+        fontFamily: "Arial",
+        paddingBottom: "40px",
       }}
     >
       <div
         style={{
-          width: "1200px",
+          width: "1500px",
           height: "90vh",
           background: "white",
           borderRadius: "12px",
@@ -147,7 +222,98 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           overflow: "hidden",
         }}
       >
-        {/* INTERVIEWER */}
+        {/* ------------------ NEW RECORDING PANEL ------------------ */}
+        <div
+          style={{
+            width: "300px",
+            background: "#fafafa",
+            borderRight: "1px solid #ddd",
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "15px",
+          }}
+        >
+          <h3 style={{ marginTop: 0 }}>Recording Panel</h3>
+
+          {/* Small Preview */}
+          <video
+            ref={previewRef}
+            muted
+            style={{
+              width: "100%",
+              height: "180px",
+              background: "black",
+              borderRadius: "8px",
+              objectFit: "cover",
+            }}
+          />
+
+          <button
+            onClick={startRecording}
+            style={{
+              width: "100%",
+              padding: "10px",
+              background: "#0057ff",
+              color: "white",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            ▶️ Record Interview
+          </button>
+
+          <button
+            onClick={stopRecording}
+            style={{
+              width: "100%",
+              padding: "10px",
+              background: "#d9534f",
+              color: "white",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            ⏹ Stop Recording
+          </button>
+
+          <button
+            onClick={() => setShowPlayback(true)}
+            disabled={!videoURL}
+            style={{
+              width: "100%",
+              padding: "10px",
+              background: videoURL ? "#0b3c6d" : "#999",
+              color: "white",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              cursor: videoURL ? "pointer" : "not-allowed",
+            }}
+          >
+            🎥 Play Back Interview
+          </button>
+
+          <button
+            onClick={saveRecording}
+            disabled={!videoURL}
+            style={{
+              width: "100%",
+              padding: "10px",
+              background: videoURL ? "#28a745" : "#999",
+              color: "white",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              cursor: videoURL ? "pointer" : "not-allowed",
+            }}
+          >
+            💾 Save Interview
+          </button>
+        </div>
+
+        {/* ------------------ INTERVIEWER PANEL ------------------ */}
         <div
           style={{
             flex: 2,
@@ -173,7 +339,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
             Interviewer Talking Text
           </h2>
 
-          {/* VOICE DROPDOWN */}
           <select
             value={selectedVoice}
             onChange={(e) => setSelectedVoice(e.target.value)}
@@ -194,7 +359,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
             ))}
           </select>
 
-          {/* IMAGE */}
           <img
             src={voiceImages[selectedVoice] || voiceImages.default}
             alt="Interviewer"
@@ -208,7 +372,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
             }}
           />
 
-          {/* QUESTION BOX */}
           <div
             style={{
               marginTop: "20px",
@@ -225,7 +388,7 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           </div>
         </div>
 
-        {/* TRANSCRIPT */}
+        {/* ------------------ TRANSCRIPT PANEL ------------------ */}
         <div
           style={{
             flex: 1,
@@ -235,24 +398,23 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           }}
         >
           <h3>Interview Transcript</h3>
-        {transcript.map((item, i) => (
-  <div key={i} style={{ marginBottom: 20 }}>
-    <strong>Question {i + 1}</strong>
-    <div>{item.question}</div>
-
-    <strong>Answer</strong>
-    <div>{item.answer}</div>
-  </div>
-))}
+          {transcript.map((item, i) => (
+            <div key={i} style={{ marginBottom: 20 }}>
+              <strong>Question {i + 1}</strong>
+              <div>{item.question}</div>
+              <strong>Answer</strong>
+              <div>{item.answer}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ANSWER BAR */}
+      {/* ------------------ ANSWER BAR ------------------ */}
       <div
         style={{
           position: "fixed",
           bottom: "20px",
-          width: "1200px",
+          width: "1500px",
           background: "white",
           padding: "15px",
           borderRadius: "10px",
@@ -276,18 +438,15 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
           }}
         />
 
-        {/* 🔥 YOUR POPUP BUTTON IS BACK */}
         <button
           onClick={() => {
             answerRef.current?.focus();
             answerRef.current?.select();
-
             const keyboardEvent = new KeyboardEvent("keydown", {
               key: "d",
               code: "KeyD",
               bubbles: true,
             });
-
             answerRef.current?.dispatchEvent(keyboardEvent);
             setShowVoiceHelp(true);
           }}
@@ -320,9 +479,91 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
         >
           Submit Answer
         </button>
+
+        {interviewComplete && (
+          <button
+            onClick={() => (window.location.href = "/results")}
+            style={{
+              padding: "10px 20px",
+              background: "#0b3c6d",
+              color: "white",
+              fontWeight: "bold",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "16px",
+            }}
+          >
+            Next →
+          </button>
+        )}
       </div>
 
-      {/* POPUP OVERLAY */}
+      {/* ------------------ PLAYBACK MODAL ------------------ */}
+      {showPlayback && (
+        <>
+          <div
+            onClick={() => setShowPlayback(false)}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0,0,0,0.45)",
+              zIndex: 999,
+            }}
+          />
+
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "white",
+              padding: "25px",
+              borderRadius: "12px",
+              width: "640px",
+              maxWidth: "95vw",
+              boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+              zIndex: 1000,
+            }}
+          >
+            <h3>Interview Recording</h3>
+
+            {videoURL ? (
+              <video
+                controls
+                style={{
+                  width: "100%",
+                  marginTop: "10px",
+                  borderRadius: "8px",
+                  background: "black",
+                }}
+              >
+                <source src={videoURL} type="video/webm" />
+              </video>
+            ) : (
+              <p>No video recorded.</p>
+            )}
+
+            <button
+              onClick={() => setShowPlayback(false)}
+              style={{
+                marginTop: "15px",
+                padding: "10px 15px",
+                background: "#ddd",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ------------------ VOICE HELP POPUP ------------------ */}
       {showVoiceHelp && (
         <div
           onClick={() => setShowVoiceHelp(false)}
@@ -338,7 +579,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
         />
       )}
 
-      {/* POPUP BOX */}
       {showVoiceHelp && (
         <div
           style={{
@@ -356,45 +596,6 @@ background: "linear-gradient(to bottom, #cbd5e1, #64748b)",        fontFamily: "
         >
           <h3>Use Voice Typing</h3>
           <p>You can use your device’s built-in speech-to-text:</p>
-
           <ul>
             <li><strong>Chromebook:</strong> Search + D</li>
-            <li><strong>Windows:</strong> Windows + H</li>
-            <li><strong>Mac:</strong> Fn twice</li>
-            <li><strong>iPhone/iPad:</strong> Keyboard mic</li>
-            <li><strong>Android:</strong> Keyboard mic</li>
-          </ul>
-
-          <button
-            onClick={() => {
-              setShowVoiceHelp(false);
-              setTimeout(() => answerRef.current?.focus(), 50);
-            }}
-            style={{
-              marginTop: "10px",
-              padding: "8px 12px",
-              background: "#ddd",
-              borderRadius: "6px",
-              cursor: "pointer",
-            }}
-          >
-            Close
-          </button>
-        </div>
-      )}
-
-      <style jsx>{`
-        @keyframes popIn {
-          0% {
-            transform: scale(0.85);
-            opacity: 0;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
-    </main>
-  );
-}
+            <li><strong>Windows:</strong> Windows + H
