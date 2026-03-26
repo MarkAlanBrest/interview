@@ -215,6 +215,27 @@ function submitAnswer() {
       setQuestion("Unable to load questions. Try again.");
     }
   }
+
+/* ------------------ READ QUESTION ALOUD ------------------ */
+useEffect(() => {
+  if (!question || question.includes("Loading")) return;
+
+  const utterance = new SpeechSynthesisUtterance(question);
+  const voice = voices.find((v) => v.name === selectedVoice);
+  if (voice) utterance.voice = voice;
+
+  utterance.lang = "en-US";
+  utterance.rate = 0.95;
+  utterance.pitch = 1.02;
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}, [question, selectedVoice, voices]);
+
+
+
+
+
   /* ------------------ UI ------------------ */
   return (
     <main
