@@ -230,7 +230,7 @@ function submitAnswer() {
     >
       <div
         style={{
-          width: "1500px", // widened to fit new left panel
+          width: "1200px", // widened to fit new left panel
           height: "90vh",
           background: "white",
           borderRadius: "12px",
@@ -244,7 +244,7 @@ function submitAnswer() {
         ---------------------------------------------------------- */}
         <div
           style={{
-            width: "300px",
+            width: "250px",
             background: "#fafafa",
             borderRight: "1px solid #ddd",
             padding: "20px",
@@ -447,7 +447,7 @@ function submitAnswer() {
         style={{
           position: "fixed",
           bottom: "20px",
-          width: "1500px",
+          width: "1200px",
           background: "white",
           padding: "15px",
           borderRadius: "10px",
