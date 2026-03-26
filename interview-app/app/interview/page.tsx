@@ -54,6 +54,10 @@ export default function InterviewPage() {
   /* ----------------------------------------------------------
      VIDEO RECORDING: START
   ---------------------------------------------------------- */
+  
+  
+  
+
   async function startRecording() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -80,6 +84,8 @@ export default function InterviewPage() {
         setVideoURL(url);
       };
 
+
+
       recorder.start();
       setMediaRecorder(recorder);
       setMediaStream(stream);
@@ -87,6 +93,9 @@ export default function InterviewPage() {
       console.error("Error starting video recording:", err);
     }
   }
+
+
+  
 
   /* ----------------------------------------------------------
      VIDEO RECORDING: STOP
@@ -131,6 +140,37 @@ export default function InterviewPage() {
   useEffect(() => {
     loadQuestions();
   }, []);
+
+
+
+function submitAnswer() {
+  if (!answer.trim()) return;
+
+  const updatedTranscript = [...transcript, { question, answer }];
+  setTranscript(updatedTranscript);
+
+  sessionStorage.setItem(
+    "interviewTranscript",
+    JSON.stringify(updatedTranscript)
+  );
+
+  setAnswer("");
+
+  // If finished all 10 questions → show Next button
+  if (updatedTranscript.length >= 10) {
+    setInterviewComplete(true);
+    return;
+  }
+
+  const nextIndex = questionIndex + 1;
+  setQuestionIndex(nextIndex);
+  setQuestion(questions[nextIndex]);
+}
+
+
+
+
+
 
   async function loadQuestions() {
     try {
