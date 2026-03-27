@@ -80,55 +80,51 @@ export default function StartPage() {
   }
 
   return (
-    <main style={pageStyle}>
-      <div style={panelStyle}>
+    <main style={page}>
+      <div style={container}>
 
         {/* HEADER */}
-        <h1 style={headerTitle}>NCST Interview Setup</h1>
-        <p style={headerSubtitle}>Complete the steps below to begin.</p>
+        <h1 style={title}>NCST AI Interview Setup</h1>
+        <p style={subtitle}>Choose your settings below to begin.</p>
 
-        {/* JOB TITLE */}
-        <div style={section}>
-          <label style={label}>Job Title</label>
-          <input
-            placeholder="Welder, Carpenter, HVAC Technician..."
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-            style={input}
-          />
-        </div>
+        {/* TILE GRID */}
+        <div style={tileGrid}>
 
-        {/* EXPERIENCE LEVEL — PILL BUTTONS */}
-        <div style={section}>
-          <label style={label}>Experience Level</label>
-
-          <div style={pillRow}>
-            {[
-              "Apprentice",
-              "Junior",
-              "Intermediate",
-              "Senior",
-              "Lead",
-              "Supervisor",
-              "Manager",
-              "Director",
-            ].map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => setJobLevel(lvl)}
-                style={pill(jobLevel === lvl)}
-              >
-                {lvl}
-              </button>
-            ))}
+          {/* TILE 1 — JOB TITLE */}
+          <div style={tile}>
+            <h3 style={tileTitle}>Job Title</h3>
+            <input
+              placeholder="Welder, Carpenter, HVAC Technician..."
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              style={input}
+            />
           </div>
-        </div>
 
-        {/* RESUME UPLOAD */}
-        <div style={section}>
-          <label style={label}>Resume Upload</label>
+          {/* TILE 2 — EXPERIENCE LEVEL */}
+          <div style={tile}>
+            <h3 style={tileTitle}>Experience Level</h3>
+            <select
+              value={jobLevel}
+              onChange={(e) => setJobLevel(e.target.value)}
+              style={dropdown}
+            >
+              <option value="">Select level...</option>
+              <option>Apprentice</option>
+              <option>Junior</option>
+              <option>Intermediate</option>
+              <option>Senior</option>
+              <option>Lead</option>
+              <option>Supervisor</option>
+              <option>Manager</option>
+              <option>Director</option>
+            </select>
+          </div>
 
-          <div style={uploadCard}>
+          {/* TILE 3 — RESUME UPLOAD */}
+          <div style={tile}>
+            <h3 style={tileTitle}>Upload Resume</h3>
+
             <input
               id="resumeFile"
               type="file"
@@ -139,38 +135,29 @@ export default function StartPage() {
 
             <button
               onClick={() => document.getElementById("resumeFile")?.click()}
-              style={uploadButton}
+              style={uploadBtn}
             >
               Choose File
             </button>
 
-            {resumeUploaded ? (
-              <span style={success}>✓ Uploaded</span>
-            ) : (
-              <span style={pending}>No file selected</span>
+            {resumeUploaded && (
+              <p style={uploaded}>✓ Resume uploaded</p>
             )}
           </div>
-        </div>
-
-        {/* EXPECTATIONS */}
-        <div style={noticeBox}>
-          <strong>Interview Expectations</strong>
-          <p>You may complete the interview as many times as needed.</p>
-          <p>A certificate is issued once you score <b>80% or higher</b>.</p>
         </div>
 
         {/* DIRECTIONS */}
         <div style={directionsBox}>
           <ul style={directionsList}>
-            <li>Record yourself to see how you do, then watch it to see yourself squirm.</li>
-            <li>You are only required to submit the final PDF results to Canvas.</li>
-            <li>Use your real resume — the AI tailors questions to your experience.</li>
-            <li>Answer out loud. The system is designed for spoken responses.</li>
+            <li>Record yourself to see how you do — watching it back is the real lesson.</li>
+            <li>You only need to submit the final PDF results to Canvas.</li>
+            <li>Use your real resume so the questions match your experience.</li>
+            <li>Answer out loud — this is a mock interview, not a quiz.</li>
           </ul>
         </div>
 
         {/* START BUTTON */}
-        <button onClick={startInterview} style={startButton}>
+        <button onClick={startInterview} style={startBtn}>
           Start Interview
         </button>
       </div>
@@ -180,119 +167,102 @@ export default function StartPage() {
 
 /* ---------- STYLES ---------- */
 
-const pageStyle = {
+const page = {
   minHeight: "100vh",
-  background: "#f1f5f9",
+  background: "#eef2f7",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   fontFamily: "Inter, Arial",
 };
 
-const panelStyle = {
-  width: 600,
+const container = {
+  width: 900,
   background: "white",
   padding: 40,
-  borderRadius: 16,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+  borderRadius: 18,
+  boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
 };
 
-const headerTitle = {
-  fontSize: 28,
+const title = {
+  fontSize: 32,
   fontWeight: 800,
   color: "#1e293b",
   marginBottom: 4,
+  textAlign: "center" as const,
 };
 
-const headerSubtitle = {
-  fontSize: 15,
+const subtitle = {
+  fontSize: 16,
   color: "#475569",
+  marginBottom: 30,
+  textAlign: "center" as const,
+};
+
+const tileGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, 1fr)",
+  gap: 20,
   marginBottom: 30,
 };
 
-const section = {
-  marginBottom: 25,
+const tile = {
+  background: "#f8fafc",
+  padding: 20,
+  borderRadius: 14,
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  transition: "0.2s",
+  cursor: "pointer",
 };
 
-const label = {
-  display: "block",
-  fontSize: 15,
-  fontWeight: 600,
-  marginBottom: 6,
+const tileTitle = {
+  fontSize: 16,
+  fontWeight: 700,
+  marginBottom: 10,
   color: "#1e293b",
 };
 
 const input: React.CSSProperties = {
   width: "100%",
-  padding: "12px 14px",
-  fontSize: 16,
+  padding: "10px 12px",
+  fontSize: 15,
   borderRadius: 8,
   border: "1px solid #cbd5e1",
-  background: "#f8fafc",
+  background: "white",
 };
 
-const pillRow = {
-  display: "flex",
-  flexWrap: "wrap" as const,
-  gap: 8,
-};
-
-const pill = (active: boolean) => ({
-  padding: "8px 14px",
-  borderRadius: 20,
-  border: active ? "2px solid #1e3a8a" : "1px solid #cbd5e1",
-  background: active ? "#1e3a8a" : "white",
-  color: active ? "white" : "#1e293b",
-  cursor: "pointer",
-  fontSize: 14,
-  fontWeight: 600,
-});
-
-const uploadCard = {
-  display: "flex",
-  alignItems: "center",
-  gap: 12,
-  padding: 12,
-  borderRadius: 10,
+const dropdown = {
+  width: "100%",
+  padding: "10px 12px",
+  fontSize: 15,
+  borderRadius: 8,
   border: "1px solid #cbd5e1",
-  background: "#f8fafc",
+  background: "white",
 };
 
-const uploadButton = {
-  padding: "8px 14px",
+const uploadBtn = {
+  padding: "10px 14px",
   background: "#1e3a8a",
   color: "white",
   border: "none",
-  borderRadius: 6,
+  borderRadius: 8,
   cursor: "pointer",
-  fontSize: 14,
+  fontSize: 15,
   fontWeight: 600,
 };
 
-const success = {
+const uploaded = {
+  marginTop: 8,
   color: "#16a34a",
   fontWeight: 700,
 };
 
-const pending = {
-  color: "#64748b",
-};
-
-const noticeBox = {
-  marginTop: 20,
-  background: "#e2e8f0",
-  padding: 16,
-  borderRadius: 12,
-  fontSize: 14,
-  color: "#1f2937",
-};
-
 const directionsBox = {
-  marginTop: 20,
-  background: "#f8fafc",
-  padding: "14px 18px",
-  borderRadius: 10,
+  background: "#f1f5f9",
+  padding: 18,
+  borderRadius: 12,
   border: "1px solid #e2e8f0",
+  marginBottom: 25,
 };
 
 const directionsList = {
@@ -300,12 +270,11 @@ const directionsList = {
   paddingLeft: 20,
   color: "#334155",
   fontSize: 14,
-  lineHeight: 1.5,
+  lineHeight: 1.45,
 };
 
-const startButton = {
+const startBtn = {
   width: "100%",
-  marginTop: 25,
   padding: 16,
   fontSize: 18,
   background: "#1e3a8a",
