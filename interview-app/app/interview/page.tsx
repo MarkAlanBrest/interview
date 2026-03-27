@@ -94,8 +94,10 @@ async function startRecording() {
       previewRef.current.play();
     }
 
-    const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-    const chunks: BlobPart[] = [];
+const recorder = new MediaRecorder(stream, {
+  mimeType: "video/webm",
+  videoBitsPerSecond: 400000, // 👈 controls file size
+});    const chunks: BlobPart[] = [];
 
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunks.push(e.data);
