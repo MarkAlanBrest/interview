@@ -11,8 +11,6 @@ export default function StartPage() {
   const [resumeText, setResumeText] = useState("");
   const [resumeUploaded, setResumeUploaded] = useState(false);
 
-  const [openTile, setOpenTile] = useState<string | null>(null);
-
   async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -83,72 +81,54 @@ export default function StartPage() {
 
   return (
     <main style={pageStyle}>
-      {/* LEFT SIDEBAR */}
-      <div style={sidebarStyle}>
-        <h2 style={sidebarTitle}>Setup</h2>
+      <div style={panelStyle}>
 
-        <div style={progressItem(jobTitle !== "")}>1. Job Title</div>
-        <div style={progressItem(jobLevel !== "")}>2. Experience Level</div>
-        <div style={progressItem(resumeUploaded)}>3. Resume Upload</div>
+        {/* HEADER */}
+        <h1 style={headerTitle}>NCST Interview Setup</h1>
+        <p style={headerSubtitle}>Complete the steps below to begin.</p>
 
-        <div style={{ marginTop: "auto" }}>
-          <button onClick={startInterview} style={startButton}>
-            Start Interview
-          </button>
+        {/* JOB TITLE */}
+        <div style={section}>
+          <label style={label}>Job Title</label>
+          <input
+            placeholder="Welder, Carpenter, HVAC Technician..."
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+            style={input}
+          />
         </div>
-      </div>
 
-      {/* MAIN CONTENT */}
-      <div style={contentStyle}>
-        <h1 style={headerTitle}>NCST AI Interview Coach</h1>
-        <p style={headerSubtitle}>Complete the steps below to begin your practice interview.</p>
+        {/* EXPERIENCE LEVEL — PILL BUTTONS */}
+        <div style={section}>
+          <label style={label}>Experience Level</label>
 
-        {/* TILE GRID */}
-        <div style={tileGrid}>
+          <div style={pillRow}>
+            {[
+              "Apprentice",
+              "Junior",
+              "Intermediate",
+              "Senior",
+              "Lead",
+              "Supervisor",
+              "Manager",
+              "Director",
+            ].map((lvl) => (
+              <button
+                key={lvl}
+                onClick={() => setJobLevel(lvl)}
+                style={pill(jobLevel === lvl)}
+              >
+                {lvl}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {/* TILE 1 */}
-          <Tile
-            title="Job Title"
-            open={openTile === "title"}
-            onClick={() => setOpenTile(openTile === "title" ? null : "title")}
-          >
-            <input
-              placeholder="Example: Welder, Carpenter, HVAC Technician"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
-              style={inputStyle}
-            />
-          </Tile>
+        {/* RESUME UPLOAD */}
+        <div style={section}>
+          <label style={label}>Resume Upload</label>
 
-          {/* TILE 2 */}
-          <Tile
-            title="Experience Level"
-            open={openTile === "level"}
-            onClick={() => setOpenTile(openTile === "level" ? null : "level")}
-          >
-            <select
-              value={jobLevel}
-              onChange={(e) => setJobLevel(e.target.value)}
-              style={{ ...inputStyle, background: "white" }}
-            >
-              <option value="">Select job level...</option>
-              <option>Apprentice</option>
-              <option>Junior</option>
-              <option>Intermediate</option>
-              <option>Senior</option>
-              <option>Lead</option>
-              <option>Supervisor</option>
-              <option>Manager</option>
-              <option>Director</option>
-            </select>
-          </Tile>
-
-          {/* TILE 3 */}
-          <Tile
-            title="Upload Resume"
-            open={openTile === "resume"}
-            onClick={() => setOpenTile(openTile === "resume" ? null : "resume")}
-          >
+          <div style={uploadCard}>
             <input
               id="resumeFile"
               type="file"
@@ -161,13 +141,15 @@ export default function StartPage() {
               onClick={() => document.getElementById("resumeFile")?.click()}
               style={uploadButton}
             >
-              Upload Resume File
+              Choose File
             </button>
 
-            {resumeUploaded && (
-              <p style={successText}>✓ Resume uploaded successfully</p>
+            {resumeUploaded ? (
+              <span style={success}>✓ Uploaded</span>
+            ) : (
+              <span style={pending}>No file selected</span>
             )}
-          </Tile>
+          </div>
         </div>
 
         {/* EXPECTATIONS */}
@@ -176,125 +158,71 @@ export default function StartPage() {
           <p>You may complete the interview as many times as needed.</p>
           <p>A certificate is issued once you score <b>80% or higher</b>.</p>
         </div>
+
+        {/* DIRECTIONS */}
+        <div style={directionsBox}>
+          <ul style={directionsList}>
+            <li>Record yourself to see how you do, then watch it to see yourself squirm.</li>
+            <li>You are only required to submit the final PDF results to Canvas.</li>
+            <li>Use your real resume — the AI tailors questions to your experience.</li>
+            <li>Answer out loud. The system is designed for spoken responses.</li>
+          </ul>
+        </div>
+
+        {/* START BUTTON */}
+        <button onClick={startInterview} style={startButton}>
+          Start Interview
+        </button>
       </div>
     </main>
-  );
-}
-
-/* ---------- TILE COMPONENT ---------- */
-
-function Tile({
-  title,
-  open,
-  onClick,
-  children,
-}: {
-  title: string;
-  open: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={tileStyle(open)} onClick={onClick}>
-      <div style={tileHeader}>
-        <h3 style={{ margin: 0 }}>{title}</h3>
-        <span style={{ fontSize: 22 }}>{open ? "−" : "+"}</span>
-      </div>
-
-      {open && <div style={tileContent}>{children}</div>}
-    </div>
   );
 }
 
 /* ---------- STYLES ---------- */
 
 const pageStyle = {
-  display: "flex",
   minHeight: "100vh",
   background: "#f1f5f9",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
   fontFamily: "Inter, Arial",
 };
 
-const sidebarStyle = {
-  width: 240,
-  background: "#1e293b",
-  color: "white",
-  padding: 25,
-  display: "flex",
-  flexDirection: "column" as const,
-};
-
-const sidebarTitle = {
-  fontSize: 22,
-  fontWeight: 700,
-  marginBottom: 20,
-};
-
-const progressItem = (done: boolean) => ({
-  padding: "10px 0",
-  borderBottom: "1px solid rgba(255,255,255,0.15)",
-  color: done ? "#4ade80" : "#e2e8f0",
-  fontWeight: done ? 700 : 400,
-});
-
-const startButton = {
-  width: "100%",
-  padding: 14,
-  background: "#4f46e5",
-  border: "none",
-  borderRadius: 8,
-  color: "white",
-  fontSize: 16,
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const contentStyle = {
-  flex: 1,
-  padding: "40px 60px",
+const panelStyle = {
+  width: 600,
+  background: "white",
+  padding: 40,
+  borderRadius: 16,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
 };
 
 const headerTitle = {
-  fontSize: 32,
+  fontSize: 28,
   fontWeight: 800,
   color: "#1e293b",
-  marginBottom: 6,
+  marginBottom: 4,
 };
 
 const headerSubtitle = {
-  fontSize: 16,
+  fontSize: 15,
   color: "#475569",
   marginBottom: 30,
 };
 
-const tileGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gap: 20,
+const section = {
+  marginBottom: 25,
 };
 
-const tileStyle = (open: boolean) => ({
-  background: "white",
-  padding: 20,
-  borderRadius: 14,
-  boxShadow: open
-    ? "0 8px 24px rgba(0,0,0,0.15)"
-    : "0 4px 12px rgba(0,0,0,0.08)",
-  cursor: "pointer",
-  transition: "0.2s",
-});
-
-const tileHeader = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
+const label = {
+  display: "block",
+  fontSize: 15,
+  fontWeight: 600,
+  marginBottom: 6,
+  color: "#1e293b",
 };
 
-const tileContent = {
-  marginTop: 15,
-};
-
-const inputStyle: React.CSSProperties = {
+const input: React.CSSProperties = {
   width: "100%",
   padding: "12px 14px",
   fontSize: 16,
@@ -303,28 +231,87 @@ const inputStyle: React.CSSProperties = {
   background: "#f8fafc",
 };
 
+const pillRow = {
+  display: "flex",
+  flexWrap: "wrap" as const,
+  gap: 8,
+};
+
+const pill = (active: boolean) => ({
+  padding: "8px 14px",
+  borderRadius: 20,
+  border: active ? "2px solid #1e3a8a" : "1px solid #cbd5e1",
+  background: active ? "#1e3a8a" : "white",
+  color: active ? "white" : "#1e293b",
+  cursor: "pointer",
+  fontSize: 14,
+  fontWeight: 600,
+});
+
+const uploadCard = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  padding: 12,
+  borderRadius: 10,
+  border: "1px solid #cbd5e1",
+  background: "#f8fafc",
+};
+
 const uploadButton = {
-  padding: "12px 16px",
+  padding: "8px 14px",
   background: "#1e3a8a",
   color: "white",
   border: "none",
-  borderRadius: 8,
+  borderRadius: 6,
   cursor: "pointer",
-  fontSize: 16,
+  fontSize: 14,
   fontWeight: 600,
 };
 
-const successText = {
+const success = {
   color: "#16a34a",
-  marginTop: 8,
-  fontWeight: "bold",
+  fontWeight: 700,
+};
+
+const pending = {
+  color: "#64748b",
 };
 
 const noticeBox = {
-  marginTop: 40,
+  marginTop: 20,
   background: "#e2e8f0",
-  padding: 20,
+  padding: 16,
   borderRadius: 12,
   fontSize: 14,
   color: "#1f2937",
+};
+
+const directionsBox = {
+  marginTop: 20,
+  background: "#f8fafc",
+  padding: "14px 18px",
+  borderRadius: 10,
+  border: "1px solid #e2e8f0",
+};
+
+const directionsList = {
+  margin: 0,
+  paddingLeft: 20,
+  color: "#334155",
+  fontSize: 14,
+  lineHeight: 1.5,
+};
+
+const startButton = {
+  width: "100%",
+  marginTop: 25,
+  padding: 16,
+  fontSize: 18,
+  background: "#1e3a8a",
+  color: "white",
+  border: "none",
+  borderRadius: 10,
+  cursor: "pointer",
+  fontWeight: 700,
 };
