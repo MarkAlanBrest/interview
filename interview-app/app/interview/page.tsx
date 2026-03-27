@@ -27,6 +27,14 @@ export default function InterviewPage() {
   const [interviewComplete, setInterviewComplete] = useState(false);
 
   const previewRef = useRef<HTMLVideoElement>(null);
+  // TIMER + RECORDING UI STATE
+const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+const [timeLeft, setTimeLeft] = useState(20 * 60); // 15 minutes in seconds
+const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+const [isRecording, setIsRecording] = useState(false);
+
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
   /* ----------------------------------------------------------
      VOICE IMAGE MAP (unchanged)
@@ -57,43 +65,55 @@ export default function InterviewPage() {
   
   
   
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
 
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      // Attach stream to preview window
-      if (previewRef.current) {
-        previewRef.current.srcObject = stream;
-        previewRef.current.play();
-      }
-
-      const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-      const chunks: BlobPart[] = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        setVideoURL(url);
-      };
-
-
-
-      recorder.start();
-      setMediaRecorder(recorder);
-      setMediaStream(stream);
-    } catch (err) {
-      console.error("Error starting video recording:", err);
+    // Attach stream to preview window
+    if (previewRef.current) {
+      previewRef.current.srcObject = stream;
+      previewRef.current.play();
     }
-  }
 
+    const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+    const chunks: BlobPart[] = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+      setVideoURL(url);
+    };
+
+    recorder.start();
+    setMediaRecorder(recorder);
+    setMediaStream(stream);
+    setIsRecording(true);
+
+    // RESET TIMER
+    setTimeLeft(15 * 60);
+
+    // COUNTDOWN TIMER (updates every second)
+    timerIntervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    // AUTO‑STOP AFTER 15 MINUTES
+    recordingTimeoutRef.current = setTimeout(() => {
+      stopRecording();
+      alert("Recording stopped — 15‑minute limit reached.");
+    }, 15 * 60 * 1000);
+
+  } catch (err) {
+    console.error("Error starting video recording:", err);
+  }
+}
 
   
 
@@ -101,20 +121,37 @@ export default function InterviewPage() {
      VIDEO RECORDING: STOP
   ---------------------------------------------------------- */
   function stopRecording() {
-    try {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-      }
-      if (mediaStream) {
-        mediaStream.getTracks().forEach((t) => t.stop());
-      }
-      if (previewRef.current) {
-        previewRef.current.srcObject = null;
-      }
-    } catch (err) {
-      console.error("Error stopping video recording:", err);
+  try {
+    // Clear auto-stop timer
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
     }
+
+    // Clear countdown timer
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    setIsRecording(false);
+
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((t) => t.stop());
+    }
+
+    if (previewRef.current) {
+      previewRef.current.srcObject = null;
+    }
+  } catch (err) {
+    console.error("Error stopping video recording:", err);
   }
+}
+
 
   /* ----------------------------------------------------------
      VIDEO RECORDING: SAVE TO FILE
@@ -276,6 +313,43 @@ useEffect(() => {
           }}
         >
           <h3 style={{ marginTop: 0 }}>Recording Panel</h3>
+
+          {/* TIMER + REC INDICATOR */}
+{isRecording && (
+  <div style={{ 
+    display: "flex", 
+    flexDirection: "column", 
+    alignItems: "center",
+    marginBottom: "10px"
+  }}>
+    
+    {/* Blinking red REC dot */}
+    <div 
+      style={{
+        width: "14px",
+        height: "14px",
+        borderRadius: "50%",
+        background: "red",
+        marginBottom: "6px",
+        animation: "blink 1s infinite"
+      }}
+    />
+
+    {/* Countdown timer */}
+    <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+      {Math.floor(timeLeft / 60)}:
+      {(timeLeft % 60).toString().padStart(2, "0")}
+    </div>
+
+    {/* 1-minute warning */}
+    {timeLeft <= 60 && (
+      <div style={{ color: "red", marginTop: "5px", fontWeight: "bold" }}>
+        Less than 1 minute remaining!
+      </div>
+    )}
+  </div>
+)}
+
 
           {/* Small Live Preview */}
           <video
@@ -695,6 +769,12 @@ useEffect(() => {
           POP-IN ANIMATION
       ---------------------------------------------------------- */}
       <style jsx>{`
+      @keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+
         @keyframes popIn {
           0% {
             transform: scale(0.85);
