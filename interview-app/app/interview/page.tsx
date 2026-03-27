@@ -12,7 +12,7 @@ export default function InterviewPage() {
   >([]);
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState("default");
+const [selectedVoice, setSelectedVoice] = useState("Mark");
   const [showVoiceHelp, setShowVoiceHelp] = useState(false);
 
   const answerRef = useRef<HTMLTextAreaElement>(null);
@@ -52,11 +52,23 @@ const [isRecording, setIsRecording] = useState(false);
     function loadVoices() {
       const v = window.speechSynthesis.getVoices();
       setVoices(v);
+
+      // Auto-select Mark if available
+const markVoice = v.find(
+  (voice) =>
+    voice.name.toLowerCase().includes("mark") &&
+    voice.lang === "en-US"
+);
+
+if (markVoice) {
+  setSelectedVoice(markVoice.name);
+}
     }
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
+  
   /* ----------------------------------------------------------
      VIDEO RECORDING: START
   ---------------------------------------------------------- */
@@ -507,18 +519,19 @@ const utterance = new SpeechSynthesisUtterance(
           </select>
 
           {/* INTERVIEWER IMAGE */}
-          <img
-            src={voiceImages[selectedVoice] || voiceImages.default}
-            alt="Interviewer"
-            style={{
-              width: "220px",
-              height: "220px",
-              objectFit: "cover",
-              borderRadius: "50%",
-              boxShadow: "0 6px 14px rgba(0,0,0,0.2)",
-              marginBottom: "20px",
-            }}
-          />
+      <img
+  src={voiceImages[selectedVoice] || voiceImages.default}
+  alt="Interviewer"
+  style={{
+    width: "320px",
+    height: "360px",
+    objectFit: "cover",
+    objectPosition: "center top",
+    borderRadius: "10px",
+    boxShadow: "0 6px 14px rgba(0,0,0,0.2)",
+    marginBottom: "20px",
+  }}
+/>
 
           {/* QUESTION BOX */}
           <div
