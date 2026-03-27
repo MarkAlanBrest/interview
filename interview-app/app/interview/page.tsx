@@ -12,7 +12,7 @@ export default function InterviewPage() {
   >([]);
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-const [selectedVoice, setSelectedVoice] = useState("Mark");
+  const [selectedVoice, setSelectedVoice] = useState("default");
   const [showVoiceHelp, setShowVoiceHelp] = useState(false);
 
   const answerRef = useRef<HTMLTextAreaElement>(null);
@@ -51,9 +51,9 @@ const [isRecording, setIsRecording] = useState(false);
   useEffect(() => {
     function loadVoices() {
       const v = window.speechSynthesis.getVoices();
-      setVoices(v);
+setVoices(v);
 
-      // Auto-select Mark if available
+// Set default to Mark (American) if available
 const markVoice = v.find(
   (voice) =>
     voice.name.toLowerCase().includes("mark") &&
@@ -63,12 +63,12 @@ const markVoice = v.find(
 if (markVoice) {
   setSelectedVoice(markVoice.name);
 }
+      
     }
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
-  
   /* ----------------------------------------------------------
      VIDEO RECORDING: START
   ---------------------------------------------------------- */
