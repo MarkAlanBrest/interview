@@ -523,8 +523,8 @@ const utterance = new SpeechSynthesisUtterance(
   src={voiceImages[selectedVoice] || voiceImages.default}
   alt="Interviewer"
   style={{
-    width: "260px",
-    height: "300px",
+    width: "300px",
+    height: "240px",
     objectFit: "cover",
     objectPosition: "center top",
     borderRadius: "10px",
