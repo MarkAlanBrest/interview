@@ -96,18 +96,18 @@ async function startRecording() {
     setIsRecording(true);
 
     // RESET TIMER
-    setTimeLeft(15 * 60);
+    setTimeLeft(20 * 60);
 
     // COUNTDOWN TIMER (updates every second)
     timerIntervalRef.current = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
     }, 1000);
 
-    // AUTO‑STOP AFTER 15 MINUTES
+    // AUTO‑STOP AFTER 20 MINUTES
     recordingTimeoutRef.current = setTimeout(() => {
       stopRecording();
-      alert("Recording stopped — 15‑minute limit reached.");
-    }, 15 * 60 * 1000);
+      alert("Recording stopped — 20‑minute limit reached.");
+    }, 20 * 60 * 1000);
 
   } catch (err) {
     console.error("Error starting video recording:", err);
