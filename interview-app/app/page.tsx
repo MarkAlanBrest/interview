@@ -11,7 +11,6 @@ export default function StartPage() {
   const [resumeText, setResumeText] = useState("");
   const [resumeUploaded, setResumeUploaded] = useState(false);
 
-  // ⭐ FILE UPLOAD HANDLER (DOCX + PDF + TXT)
   async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -84,12 +83,14 @@ export default function StartPage() {
     <main style={pageStyle}>
       <div style={cardStyle}>
 
-        <h1 style={titleStyle}>
-          New Castle School of Trades Interviewer
-        </h1>
+        {/* HEADER */}
+        <div style={headerStyle}>
+          <h1 style={titleStyle}>NCST AI Interview Coach</h1>
+          <p style={subtitleStyle}>Practice. Improve. Earn Your Certificate.</p>
+        </div>
 
         {/* JOB TITLE */}
-        <Section title="For the job you are applying for, please enter the job title you want to practice interviewing for.">
+        <Section title="Job Title">
           <input
             placeholder="Example: Welder, Carpenter, HVAC Technician"
             value={jobTitle}
@@ -99,7 +100,7 @@ export default function StartPage() {
         </Section>
 
         {/* JOB LEVEL */}
-        <Section title="Select the experience level that best matches the position you are applying for.">
+        <Section title="Experience Level">
           <select
             value={jobLevel}
             onChange={(e) => setJobLevel(e.target.value)}
@@ -118,7 +119,7 @@ export default function StartPage() {
         </Section>
 
         {/* RESUME UPLOAD */}
-        <Section title="Upload your current resume so the interviewer can generate realistic questions based on your experience.">
+        <Section title="Upload Resume">
           <input
             id="resumeFile"
             type="file"
@@ -135,9 +136,7 @@ export default function StartPage() {
           </button>
 
           {resumeUploaded && (
-            <p style={{ color: "#16a34a", marginTop: 8, fontWeight: "bold" }}>
-              ✓ Resume uploaded successfully
-            </p>
+            <p style={successText}>✓ Resume uploaded successfully</p>
           )}
         </Section>
 
@@ -145,9 +144,7 @@ export default function StartPage() {
         <div style={noticeStyle}>
           <strong>Interview Expectations</strong>
           <p>You may complete the interview as many times as needed.</p>
-          <p>
-            A completion certificate is issued once a score of <b>80% or higher</b> is achieved.
-          </p>
+          <p>A certificate is issued once you score <b>80% or higher</b>.</p>
         </div>
 
         <button onClick={startInterview} style={buttonStyle}>
@@ -158,12 +155,10 @@ export default function StartPage() {
   );
 }
 
-/* ---------- components ---------- */
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginTop: 25 }}>
-      <h3 style={{ fontWeight: 600 }}>{title}</h3>
+    <div style={{ marginTop: 20 }}>
+      <h3 style={sectionTitle}>{title}</h3>
       {children}
     </div>
   );
@@ -171,69 +166,97 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 /* ---------- styles ---------- */
 
-const titleStyle = {
-  fontSize: 36,
-  fontWeight: "bold",
-  marginBottom: 20,
-  textAlign: "center" as const,
-  color: "#1e293b",
-};
-
 const pageStyle = {
   minHeight: "100vh",
-  background: "#e5e7eb",
+  background: "linear-gradient(135deg, #dbeafe, #e2e8f0)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   padding: 20,
-  fontFamily: "Arial",
+  fontFamily: "Inter, Arial",
 };
 
 const cardStyle = {
-  width: 850,
-  background: "#ffffff",
-  padding: 40,
-  borderRadius: 12,
-  boxShadow: "0 10px 28px rgba(0,0,0,0.15)",
+  width: 700,
+  background: "white",
+  padding: 35,
+  borderRadius: 16,
+  boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
+};
+
+const headerStyle = {
+  textAlign: "center" as const,
+  marginBottom: 30,
+  paddingBottom: 20,
+  borderBottom: "1px solid #e5e7eb",
+};
+
+const titleStyle = {
+  fontSize: 32,
+  fontWeight: 800,
+  color: "#1e293b",
+  marginBottom: 6,
+};
+
+const subtitleStyle = {
+  fontSize: 16,
+  color: "#475569",
+};
+
+const sectionTitle = {
+  fontSize: 16,
+  fontWeight: 600,
+  color: "#1e293b",
+  marginBottom: 6,
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: 10,
-  marginBottom: 12,
+  padding: "12px 14px",
+  marginTop: 4,
   fontSize: 16,
-  borderRadius: 6,
-  border: "1px solid #94a3b8",
+  borderRadius: 8,
+  border: "1px solid #cbd5e1",
+  background: "#f8fafc",
 };
 
 const uploadButtonStyle = {
   marginTop: 10,
-  padding: "10px 14px",
+  padding: "12px 16px",
   background: "#1e3a8a",
   color: "white",
   border: "none",
-  borderRadius: 6,
+  borderRadius: 8,
   cursor: "pointer",
   fontSize: 16,
+  fontWeight: 600,
+};
+
+const successText = {
+  color: "#16a34a",
+  marginTop: 8,
+  fontWeight: "bold",
 };
 
 const noticeStyle = {
   marginTop: 25,
-  background: "#e2e8f0",
+  background: "#f1f5f9",
   padding: 15,
-  borderRadius: 8,
+  borderRadius: 10,
   fontSize: 14,
   color: "#1f2937",
+  border: "1px solid #e2e8f0",
 };
 
 const buttonStyle = {
   width: "100%",
-  marginTop: 25,
-  padding: 14,
+  marginTop: 30,
+  padding: 16,
   fontSize: 18,
   background: "#1e3a8a",
   color: "white",
   border: "none",
-  borderRadius: 8,
+  borderRadius: 10,
   cursor: "pointer",
+  fontWeight: 700,
 };
