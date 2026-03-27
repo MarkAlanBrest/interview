@@ -252,7 +252,40 @@ function submitAnswer() {
 useEffect(() => {
   if (!question || question.includes("Loading")) return;
 
-  const utterance = new SpeechSynthesisUtterance(question);
+const neutralFillers = [
+  "Alright...",
+  "Okay...",
+  "Let’s see...",
+  "Now...",
+  "Moving on...",
+  "Let’s shift gears...",
+];
+
+const responseFillers = [
+  "Thanks for that.",
+  "I appreciate that.",
+  "That’s helpful.",
+  "Got it.",
+];
+
+let intro = "";
+
+if (questionIndex === 0) {
+  // First question (no weird responses)
+  intro = "Let’s get started.";
+} else {
+  // Mix safe + response style
+  const allFillers = [...neutralFillers, ...responseFillers];
+  intro = allFillers[Math.floor(Math.random() * allFillers.length)];
+}
+
+const utterance = new SpeechSynthesisUtterance(
+  intro + " " + question
+);
+
+
+
+  
   const voice = voices.find((v) => v.name === selectedVoice);
   if (voice) utterance.voice = voice;
 
