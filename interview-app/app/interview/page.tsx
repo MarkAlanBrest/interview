@@ -33,7 +33,7 @@ const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 const [isRecording, setIsRecording] = useState(false);
 
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+const [speaking, setSpeaking] = useState(false);
 
   /* ----------------------------------------------------------
      VOICE IMAGE MAP (unchanged)
@@ -256,19 +256,22 @@ function submitAnswer() {
 useEffect(() => {
   if (!question || question.includes("Loading")) return;
 
+  window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(question);
+
   const voice = voices.find((v) => v.name === selectedVoice);
   if (voice) utterance.voice = voice;
+
+  utterance.onstart = () => setSpeaking(true);
+  utterance.onend = () => setSpeaking(false);
 
   utterance.lang = "en-US";
   utterance.rate = 0.95;
   utterance.pitch = 1.02;
 
-  window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 }, [question, selectedVoice, voices]);
-
-
 
 
 
@@ -479,19 +482,55 @@ useEffect(() => {
             ))}
           </select>
 
-          {/* INTERVIEWER IMAGE */}
-          <img
-            src={voiceImages[selectedVoice] || voiceImages.default}
-            alt="Interviewer"
-            style={{
-              width: "220px",
-              height: "220px",
-              objectFit: "cover",
-              borderRadius: "50%",
-              boxShadow: "0 6px 14px rgba(0,0,0,0.2)",
-              marginBottom: "20px",
-            }}
-          />
+
+
+      {/* INTERVIEWER AVATAR */}
+<div
+  style={{
+    width: 280,
+    height: 280,
+    borderRadius: "50%",
+    overflow: "hidden",
+    position: "relative",
+    marginBottom: "20px",
+    boxShadow: speaking
+      ? "0 0 25px #3b82f6"
+      : "0 6px 14px rgba(0,0,0,0.2)",
+  }}
+>
+  <img
+    src={voiceImages[selectedVoice] || voiceImages.default}
+    alt="Interviewer"
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "center top",
+      animation: speaking ? "talkMove 0.6s ease-in-out infinite" : "none",
+    }}
+  />
+
+  {/* MOUTH ANIMATION */}
+  {speaking && (
+    <div
+      style={{
+        position: "absolute",
+        bottom: "32%",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "40px",
+        height: "10px",
+        background: "#000",
+        borderRadius: "50%",
+        animation: "mouthMove 0.2s infinite alternate",
+        opacity: 0.8,
+      }}
+    />
+  )}
+</div>
+
+
+
 
           {/* QUESTION BOX */}
           <div
@@ -773,7 +812,18 @@ useEffect(() => {
   50% { opacity: 0.2; }
   100% { opacity: 1; }
 }
+@keyframes talkMove {
+  0% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-2px) rotate(-1deg); }
+  50% { transform: translateY(0px) rotate(1deg); }
+  75% { transform: translateY(-2px) rotate(-1deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
 
+@keyframes mouthMove {
+  from { height: 6px; }
+  to { height: 18px; }
+}
         @keyframes popIn {
           0% {
             transform: scale(0.85);
