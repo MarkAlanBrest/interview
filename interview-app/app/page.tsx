@@ -11,6 +11,8 @@ export default function StartPage() {
   const [resumeText, setResumeText] = useState("");
   const [resumeUploaded, setResumeUploaded] = useState(false);
 
+  const [openTile, setOpenTile] = useState<string | null>(null);
+
   async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -81,147 +83,227 @@ export default function StartPage() {
 
   return (
     <main style={pageStyle}>
-      <div style={cardStyle}>
+      {/* LEFT SIDEBAR */}
+      <div style={sidebarStyle}>
+        <h2 style={sidebarTitle}>Setup</h2>
 
-        {/* HEADER */}
-        <div style={headerStyle}>
-          <h1 style={titleStyle}>NCST AI Interview Coach</h1>
-          <p style={subtitleStyle}>Practice. Improve. Earn Your Certificate.</p>
+        <div style={progressItem(jobTitle !== "")}>1. Job Title</div>
+        <div style={progressItem(jobLevel !== "")}>2. Experience Level</div>
+        <div style={progressItem(resumeUploaded)}>3. Resume Upload</div>
+
+        <div style={{ marginTop: "auto" }}>
+          <button onClick={startInterview} style={startButton}>
+            Start Interview
+          </button>
+        </div>
+      </div>
+
+      {/* MAIN CONTENT */}
+      <div style={contentStyle}>
+        <h1 style={headerTitle}>NCST AI Interview Coach</h1>
+        <p style={headerSubtitle}>Complete the steps below to begin your practice interview.</p>
+
+        {/* TILE GRID */}
+        <div style={tileGrid}>
+
+          {/* TILE 1 */}
+          <Tile
+            title="Job Title"
+            open={openTile === "title"}
+            onClick={() => setOpenTile(openTile === "title" ? null : "title")}
+          >
+            <input
+              placeholder="Example: Welder, Carpenter, HVAC Technician"
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              style={inputStyle}
+            />
+          </Tile>
+
+          {/* TILE 2 */}
+          <Tile
+            title="Experience Level"
+            open={openTile === "level"}
+            onClick={() => setOpenTile(openTile === "level" ? null : "level")}
+          >
+            <select
+              value={jobLevel}
+              onChange={(e) => setJobLevel(e.target.value)}
+              style={{ ...inputStyle, background: "white" }}
+            >
+              <option value="">Select job level...</option>
+              <option>Apprentice</option>
+              <option>Junior</option>
+              <option>Intermediate</option>
+              <option>Senior</option>
+              <option>Lead</option>
+              <option>Supervisor</option>
+              <option>Manager</option>
+              <option>Director</option>
+            </select>
+          </Tile>
+
+          {/* TILE 3 */}
+          <Tile
+            title="Upload Resume"
+            open={openTile === "resume"}
+            onClick={() => setOpenTile(openTile === "resume" ? null : "resume")}
+          >
+            <input
+              id="resumeFile"
+              type="file"
+              accept=".pdf,.txt,.docx"
+              style={{ display: "none" }}
+              onChange={handleResumeUpload}
+            />
+
+            <button
+              onClick={() => document.getElementById("resumeFile")?.click()}
+              style={uploadButton}
+            >
+              Upload Resume File
+            </button>
+
+            {resumeUploaded && (
+              <p style={successText}>✓ Resume uploaded successfully</p>
+            )}
+          </Tile>
         </div>
 
-        {/* JOB TITLE */}
-        <Section title="Job Title">
-          <input
-            placeholder="Example: Welder, Carpenter, HVAC Technician"
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-            style={inputStyle}
-          />
-        </Section>
-
-        {/* JOB LEVEL */}
-        <Section title="Experience Level">
-          <select
-            value={jobLevel}
-            onChange={(e) => setJobLevel(e.target.value)}
-            style={{ ...inputStyle, background: "white" }}
-          >
-            <option value="">Select job level...</option>
-            <option>Apprentice</option>
-            <option>Junior</option>
-            <option>Intermediate</option>
-            <option>Senior</option>
-            <option>Lead</option>
-            <option>Supervisor</option>
-            <option>Manager</option>
-            <option>Director</option>
-          </select>
-        </Section>
-
-        {/* RESUME UPLOAD */}
-        <Section title="Upload Resume">
-          <input
-            id="resumeFile"
-            type="file"
-            accept=".pdf,.txt,.docx"
-            style={{ display: "none" }}
-            onChange={handleResumeUpload}
-          />
-
-          <button
-            onClick={() => document.getElementById("resumeFile")?.click()}
-            style={uploadButtonStyle}
-          >
-            Upload Resume File
-          </button>
-
-          {resumeUploaded && (
-            <p style={successText}>✓ Resume uploaded successfully</p>
-          )}
-        </Section>
-
         {/* EXPECTATIONS */}
-        <div style={noticeStyle}>
+        <div style={noticeBox}>
           <strong>Interview Expectations</strong>
           <p>You may complete the interview as many times as needed.</p>
           <p>A certificate is issued once you score <b>80% or higher</b>.</p>
         </div>
-
-        <button onClick={startInterview} style={buttonStyle}>
-          Start Interview
-        </button>
       </div>
     </main>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/* ---------- TILE COMPONENT ---------- */
+
+function Tile({
+  title,
+  open,
+  onClick,
+  children,
+}: {
+  title: string;
+  open: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <div style={{ marginTop: 20 }}>
-      <h3 style={sectionTitle}>{title}</h3>
-      {children}
+    <div style={tileStyle(open)} onClick={onClick}>
+      <div style={tileHeader}>
+        <h3 style={{ margin: 0 }}>{title}</h3>
+        <span style={{ fontSize: 22 }}>{open ? "−" : "+"}</span>
+      </div>
+
+      {open && <div style={tileContent}>{children}</div>}
     </div>
   );
 }
 
-/* ---------- styles ---------- */
+/* ---------- STYLES ---------- */
 
 const pageStyle = {
-  minHeight: "100vh",
-  background: "linear-gradient(135deg, #dbeafe, #e2e8f0)",
   display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  padding: 20,
+  minHeight: "100vh",
+  background: "#f1f5f9",
   fontFamily: "Inter, Arial",
 };
 
-const cardStyle = {
-  width: 700,
-  background: "white",
-  padding: 35,
-  borderRadius: 16,
-  boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
+const sidebarStyle = {
+  width: 240,
+  background: "#1e293b",
+  color: "white",
+  padding: 25,
+  display: "flex",
+  flexDirection: "column" as const,
 };
 
-const headerStyle = {
-  textAlign: "center" as const,
-  marginBottom: 30,
-  paddingBottom: 20,
-  borderBottom: "1px solid #e5e7eb",
+const sidebarTitle = {
+  fontSize: 22,
+  fontWeight: 700,
+  marginBottom: 20,
 };
 
-const titleStyle = {
+const progressItem = (done: boolean) => ({
+  padding: "10px 0",
+  borderBottom: "1px solid rgba(255,255,255,0.15)",
+  color: done ? "#4ade80" : "#e2e8f0",
+  fontWeight: done ? 700 : 400,
+});
+
+const startButton = {
+  width: "100%",
+  padding: 14,
+  background: "#4f46e5",
+  border: "none",
+  borderRadius: 8,
+  color: "white",
+  fontSize: 16,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const contentStyle = {
+  flex: 1,
+  padding: "40px 60px",
+};
+
+const headerTitle = {
   fontSize: 32,
   fontWeight: 800,
   color: "#1e293b",
   marginBottom: 6,
 };
 
-const subtitleStyle = {
+const headerSubtitle = {
   fontSize: 16,
   color: "#475569",
+  marginBottom: 30,
 };
 
-const sectionTitle = {
-  fontSize: 16,
-  fontWeight: 600,
-  color: "#1e293b",
-  marginBottom: 6,
+const tileGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, 1fr)",
+  gap: 20,
+};
+
+const tileStyle = (open: boolean) => ({
+  background: "white",
+  padding: 20,
+  borderRadius: 14,
+  boxShadow: open
+    ? "0 8px 24px rgba(0,0,0,0.15)"
+    : "0 4px 12px rgba(0,0,0,0.08)",
+  cursor: "pointer",
+  transition: "0.2s",
+});
+
+const tileHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+};
+
+const tileContent = {
+  marginTop: 15,
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "12px 14px",
-  marginTop: 4,
   fontSize: 16,
   borderRadius: 8,
   border: "1px solid #cbd5e1",
   background: "#f8fafc",
 };
 
-const uploadButtonStyle = {
-  marginTop: 10,
+const uploadButton = {
   padding: "12px 16px",
   background: "#1e3a8a",
   color: "white",
@@ -238,25 +320,11 @@ const successText = {
   fontWeight: "bold",
 };
 
-const noticeStyle = {
-  marginTop: 25,
-  background: "#f1f5f9",
-  padding: 15,
-  borderRadius: 10,
+const noticeBox = {
+  marginTop: 40,
+  background: "#e2e8f0",
+  padding: 20,
+  borderRadius: 12,
   fontSize: 14,
   color: "#1f2937",
-  border: "1px solid #e2e8f0",
-};
-
-const buttonStyle = {
-  width: "100%",
-  marginTop: 30,
-  padding: 16,
-  fontSize: 18,
-  background: "#1e3a8a",
-  color: "white",
-  border: "none",
-  borderRadius: 10,
-  cursor: "pointer",
-  fontWeight: 700,
 };
