@@ -28,7 +28,6 @@ export default function InterviewPage() {
 
   const previewRef = useRef<HTMLVideoElement>(null);
   // TIMER + RECORDING UI STATE
-const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 const [timeLeft, setTimeLeft] = useState(20 * 60); // 15 minutes in seconds
 const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 const [isRecording, setIsRecording] = useState(false);
