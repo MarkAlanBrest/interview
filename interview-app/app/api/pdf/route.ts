@@ -126,8 +126,11 @@ export async function POST(req: Request) {
     `;
 
     const browser = await puppeteer.launch({
+      executablePath: puppeteer.executablePath(),
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
       headless: true,
       defaultViewport: { width: 1200, height: 800 },
+      ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
