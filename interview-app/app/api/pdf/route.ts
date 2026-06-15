@@ -125,12 +125,22 @@ export async function POST(req: Request) {
       </html>
     `;
 
-    const browser = await puppeteer.launch({
-      executablePath: puppeteer.executablePath(),
+    // Allow overriding the browser executable (useful for Edge or custom installs)
+    const execPath =
+      process.env.PUPPETEER_EXECUTABLE_PATH || process.env.EDGE_PATH ||
+      (typeof puppeteer.executablePath === "function"
+        ? puppeteer.executablePath()
+        : undefined);
+
+    const launchOptions: any = {
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
       headless: true,
       defaultViewport: { width: 1200, height: 800 },
-    });
+    };
+
+    if (execPath) launchOptions.executablePath = execPath;
+
+    const browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
