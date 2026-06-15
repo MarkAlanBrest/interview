@@ -101,7 +101,13 @@ async function findBrowserExecutable() {
 }
 
 async function getLaunchOptions() {
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  const serverless =
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NETLIFY ||
+    process.env.CF_PAGES;
+
+  if (serverless) {
     return {
       args: chromium.args,
       executablePath: await chromium.executablePath(),
@@ -110,10 +116,15 @@ async function getLaunchOptions() {
     };
   }
 
-  const { path, tried } = await findBrowserExecutable();
+  const { path } = await findBrowserExecutable();
 
   if (!path) {
-    throw new Error(`No browser executable found. Tried: ${tried.join(", ")}`);
+    return {
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+      defaultViewport: { width: 1200, height: 800 },
+    };
   }
 
   return {
