@@ -130,7 +130,6 @@ export async function POST(req: Request) {
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
       headless: true,
       defaultViewport: { width: 1200, height: 800 },
-      ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
@@ -153,7 +152,11 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("PDF generation error:", error);
-    return new NextResponse("PDF generation failed.", { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("PDF generation error:", message, error);
+    return new NextResponse(`PDF generation failed: ${message}`, {
+      status: 500,
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+    });
   }
 }

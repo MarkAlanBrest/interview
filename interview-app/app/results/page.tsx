@@ -73,7 +73,8 @@ export default function ResultsPage() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("PDF export failed:", error);
-      alert("Unable to generate the PDF. Please try again.");
+      const message = error instanceof Error ? error.message : String(error);
+      alert(`Unable to generate the PDF. ${message}`);
     } finally {
       setExporting(false);
     }
