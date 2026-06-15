@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+import chromium from "@sparticuz/chromium";
+import puppeteerCore from "puppeteer-core";
 import fs from "fs";
 import os from "os";
 
@@ -17,6 +18,98 @@ function escapeHtml(text: unknown) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+async function getPuppeteerExecutablePath() {
+  try {
+    const puppeteer = await import("puppeteer");
+    const executablePath = puppeteer.default.executablePath();
+    return fs.existsSync(executablePath) ? executablePath : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function findBrowserExecutable() {
+  const tried: string[] = [];
+
+  const envCandidates = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    process.env.EDGE_PATH,
+    process.env.CHROME_PATH,
+  ].filter(Boolean) as string[];
+
+  for (const p of envCandidates) {
+    tried.push(p);
+    try {
+      if (fs.existsSync(p)) return { path: p, tried };
+    } catch {}
+  }
+
+  const platform = os.platform();
+  const common: string[] = [];
+
+  if (platform === "win32") {
+    common.push(
+      "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+      "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+    );
+  } else if (platform === "darwin") {
+    common.push(
+      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    );
+  } else {
+    common.push(
+      "/usr/bin/microsoft-edge",
+      "/usr/bin/microsoft-edge-stable",
+      "/usr/bin/google-chrome",
+      "/usr/bin/google-chrome-stable",
+      "/usr/bin/chromium-browser",
+      "/usr/bin/chromium"
+    );
+  }
+
+  for (const p of common) {
+    tried.push(p);
+    try {
+      if (fs.existsSync(p)) return { path: p, tried };
+    } catch {}
+  }
+
+  const puppeteerPath = await getPuppeteerExecutablePath();
+  if (puppeteerPath) {
+    tried.push(puppeteerPath);
+    return { path: puppeteerPath, tried };
+  }
+
+  return { path: undefined, tried };
+}
+
+async function getLaunchOptions() {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return {
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+      defaultViewport: { width: 1200, height: 800 },
+    };
+  }
+
+  const { path, tried } = await findBrowserExecutable();
+
+  if (!path) {
+    throw new Error(`No browser executable found. Tried: ${tried.join(", ")}`);
+  }
+
+  return {
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    executablePath: path,
+    headless: true,
+    defaultViewport: { width: 1200, height: 800 },
+  };
 }
 
 export async function POST(req: Request) {
@@ -127,92 +220,12 @@ export async function POST(req: Request) {
       </html>
     `;
 
-    // Find a usable browser executable. Prefer env vars, then common locations, then puppeteer's builtin.
-    function findBrowserExecutable() {
-      const tried: string[] = [];
-
-      const envCandidates = [
-        process.env.PUPPETEER_EXECUTABLE_PATH,
-        process.env.EDGE_PATH,
-        process.env.CHROME_PATH,
-      ].filter(Boolean) as string[];
-
-      for (const p of envCandidates) {
-        tried.push(p);
-        try {
-          if (fs.existsSync(p)) return { path: p, tried };
-        } catch {}
-      }
-
-      const platform = os.platform();
-      const common: string[] = [];
-
-      if (platform === "win32") {
-        common.push(
-          "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-          "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-          "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-          "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-        );
-      } else if (platform === "darwin") {
-        common.push(
-          "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-        );
-      } else {
-        // linux
-        common.push(
-          "/usr/bin/microsoft-edge",
-          "/usr/bin/microsoft-edge-stable",
-          "/usr/bin/google-chrome",
-          "/usr/bin/google-chrome-stable",
-          "/usr/bin/chromium-browser",
-          "/usr/bin/chromium"
-        );
-      }
-
-      for (const p of common) {
-        tried.push(p);
-        try {
-          if (fs.existsSync(p)) return { path: p, tried };
-        } catch {}
-      }
-
-      // Finally, try puppeteer's executable path if available
-      try {
-        const pupPath = typeof puppeteer.executablePath === "function" ? puppeteer.executablePath() : undefined;
-        if (pupPath) {
-          tried.push(pupPath);
-          if (fs.existsSync(pupPath)) return { path: pupPath, tried };
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      return { path: undefined, tried };
-    }
-
-    const { path: foundPath, tried } = findBrowserExecutable();
-
-    const launchOptions: any = {
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-      headless: true,
-      defaultViewport: { width: 1200, height: 800 },
-    };
-
-    if (foundPath) {
-      launchOptions.executablePath = foundPath;
-      console.log("Using browser executable:", foundPath);
-    } else {
-      console.warn("No browser executable found from env or common paths. Will attempt Puppeteer's default.", tried);
-    }
-
     let browser;
     try {
-      browser = await puppeteer.launch(launchOptions);
+      browser = await puppeteerCore.launch(await getLaunchOptions());
     } catch (launchErr) {
       const errMsg = (launchErr as any)?.message ?? String(launchErr);
-      const msg = `Failed to launch browser. Tried: ${tried.join(", ")}. Error: ${errMsg}`;
+      const msg = `Failed to launch browser for PDF generation. Error: ${errMsg}`;
       console.error(msg, launchErr);
       return new NextResponse(`PDF generation failed: ${msg}`, { status: 500, headers: { "Content-Type": "text/plain;charset=utf-8" } });
     }
