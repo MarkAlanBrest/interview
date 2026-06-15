@@ -164,6 +164,8 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=Interview_Report.pdf",
+        "Cache-Control": "no-store",
+        "X-PDF-Generator": "jspdf",
       },
     });
   } catch (error) {
