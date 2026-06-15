@@ -232,7 +232,7 @@ export async function POST(req: Request) {
       </html>
     `;
 
-    let browser;
+    let browser: Awaited<ReturnType<typeof puppeteerCore.launch>> | undefined;
     try {
       browser = await puppeteerCore.launch(await getLaunchOptions());
     } catch (launchErr) {
@@ -242,25 +242,27 @@ export async function POST(req: Request) {
       return new NextResponse(`PDF generation failed: ${msg}`, { status: 500, headers: { "Content-Type": "text/plain;charset=utf-8" } });
     }
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
-    await page.evaluate(() => document.fonts.ready);
+    try {
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "networkidle0" });
+      await page.evaluate(() => document.fonts.ready);
 
-    const pdfBuffer = await page.pdf({
-      format: "Letter",
-      printBackground: true,
-      margin: { top: "40px", bottom: "40px", left: "40px", right: "40px" },
-    });
+      const pdfBuffer = await page.pdf({
+        format: "Letter",
+        printBackground: true,
+        margin: { top: "40px", bottom: "40px", left: "40px", right: "40px" },
+      });
 
-    await browser.close();
-
-    return new NextResponse(Buffer.from(pdfBuffer), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=Interview_Report.pdf",
-      },
-    });
+      return new NextResponse(Buffer.from(pdfBuffer), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": "attachment; filename=Interview_Report.pdf",
+        },
+      });
+    } finally {
+      await browser.close();
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("PDF generation error:", message, error);
