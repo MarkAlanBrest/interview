@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import chromium from "@sparticuz/chromium";
-import puppeteerCore from "puppeteer-core";
-import fs from "fs";
-import os from "os";
+import { jsPDF } from "jspdf";
 
 export const runtime = "nodejs";
 
@@ -18,121 +15,71 @@ type TranscriptItem = {
   answer?: unknown;
 };
 
+type FontStyle = "normal" | "bold" | "italic" | "bolditalic";
+
 function normalizeArray<T = unknown>(value: unknown) {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
-function escapeHtml(text: unknown) {
-  if (text === null || text === undefined) return "";
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function textValue(value: unknown, fallback = "") {
+  if (value === null || value === undefined) return fallback;
+  return String(value);
 }
 
-async function getPuppeteerExecutablePath() {
-  try {
-    const puppeteer = await import("puppeteer");
-    const executablePath = puppeteer.default.executablePath();
-    return fs.existsSync(executablePath) ? executablePath : undefined;
-  } catch {
-    return undefined;
+function addReportText(
+  doc: jsPDF,
+  text: unknown,
+  y: number,
+  options: {
+    size?: number;
+    style?: FontStyle;
+    indent?: number;
+    spacing?: number;
+  } = {}
+) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 48;
+  const size = options.size ?? 11;
+  const indent = options.indent ?? 0;
+  const spacing = options.spacing ?? 1.25;
+  const x = margin + indent;
+  const maxWidth = pageWidth - margin * 2 - indent;
+
+  doc.setFont("helvetica", options.style ?? "normal");
+  doc.setFontSize(size);
+
+  const lines = doc.splitTextToSize(textValue(text, " "), maxWidth) as string[];
+  const lineHeight = size * spacing;
+
+  for (const line of lines) {
+    if (y + lineHeight > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+    }
+
+    doc.text(line, x, y);
+    y += lineHeight;
   }
+
+  return y;
 }
 
-async function findBrowserExecutable() {
-  const tried: string[] = [];
+function addSectionTitle(doc: jsPDF, title: string, y: number) {
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 48;
 
-  const envCandidates = [
-    process.env.PUPPETEER_EXECUTABLE_PATH,
-    process.env.EDGE_PATH,
-    process.env.CHROME_PATH,
-  ].filter(Boolean) as string[];
-
-  for (const p of envCandidates) {
-    tried.push(p);
-    try {
-      if (fs.existsSync(p)) return { path: p, tried };
-    } catch {}
+  if (y > pageHeight - 90) {
+    doc.addPage();
+    y = margin;
   }
 
-  const platform = os.platform();
-  const common: string[] = [];
+  y += 14;
+  y = addReportText(doc, title, y, { size: 15, style: "bold", spacing: 1.1 });
+  doc.setDrawColor(210, 210, 210);
+  doc.line(margin, y + 2, doc.internal.pageSize.getWidth() - margin, y + 2);
 
-  if (platform === "win32") {
-    common.push(
-      "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-      "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-    );
-  } else if (platform === "darwin") {
-    common.push(
-      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    );
-  } else {
-    common.push(
-      "/usr/bin/microsoft-edge",
-      "/usr/bin/microsoft-edge-stable",
-      "/usr/bin/google-chrome",
-      "/usr/bin/google-chrome-stable",
-      "/usr/bin/chromium-browser",
-      "/usr/bin/chromium"
-    );
-  }
-
-  for (const p of common) {
-    tried.push(p);
-    try {
-      if (fs.existsSync(p)) return { path: p, tried };
-    } catch {}
-  }
-
-  const puppeteerPath = await getPuppeteerExecutablePath();
-  if (puppeteerPath) {
-    tried.push(puppeteerPath);
-    return { path: puppeteerPath, tried };
-  }
-
-  return { path: undefined, tried };
-}
-
-async function getLaunchOptions() {
-  const serverless =
-    process.env.VERCEL ||
-    process.env.AWS_LAMBDA_FUNCTION_NAME ||
-    process.env.NETLIFY ||
-    process.env.CF_PAGES;
-
-  if (serverless) {
-    return {
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: true,
-      defaultViewport: { width: 1200, height: 800 },
-    };
-  }
-
-  const { path } = await findBrowserExecutable();
-
-  if (!path) {
-    return {
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: true,
-      defaultViewport: { width: 1200, height: 800 },
-    };
-  }
-
-  return {
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-    executablePath: path,
-    headless: true,
-    defaultViewport: { width: 1200, height: 800 },
-  };
+  return y + 18;
 }
 
 export async function POST(req: Request) {
@@ -143,137 +90,82 @@ export async function POST(req: Request) {
     const suggestions = normalizeArray(results.suggestions);
     const transcript = normalizeArray<TranscriptItem>(results.transcript);
 
-    const html = `
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 40px;
-              color: #333;
-              background: white;
-              margin: 0;
-            }
+    const doc = new jsPDF({
+      unit: "pt",
+      format: "letter",
+      compress: true,
+    });
 
-            .header {
-              text-align: center;
-              margin-bottom: 40px;
-            }
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 56;
 
-            .score {
-              font-size: 48px;
-              font-weight: bold;
-              color: #2a7ae2;
-              margin-top: 10px;
-            }
+    doc.setTextColor(40, 40, 40);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("Interview Evaluation Report", pageWidth / 2, y, { align: "center" });
 
-            h2 {
-              border-bottom: 2px solid #ddd;
-              padding-bottom: 6px;
-              margin-top: 40px;
-            }
+    y += 38;
+    doc.setTextColor(42, 122, 226);
+    doc.setFontSize(34);
+    doc.text(`${textValue(results.totalScore ?? results.score ?? 0)}%`, pageWidth / 2, y, {
+      align: "center",
+    });
+    doc.setTextColor(40, 40, 40);
 
-            .section {
-              margin-bottom: 20px;
-            }
+    y += 34;
+    y = addSectionTitle(doc, "Overall Feedback", y);
+    y = addReportText(doc, results.feedback || "No overall feedback was provided.", y);
 
-            .question {
-              margin-bottom: 15px;
-              padding: 10px;
-              border: 1px solid #eee;
-              border-radius: 6px;
-            }
-
-            .transcript-item {
-              margin-bottom: 12px;
-            }
-          </style>
-        </head>
-
-        <body>
-          <div class="header">
-            <h1>Interview Evaluation Report</h1>
-            <div class="score">${escapeHtml(results.totalScore ?? results.score ?? 0)}%</div>
-          </div>
-
-          <h2>Overall Feedback</h2>
-          <p>${escapeHtml(results.feedback)}</p>
-
-          ${results.teacherSummary ? `
-            <h2>Teacher Summary</h2>
-            <p>${escapeHtml(results.teacherSummary)}</p>
-          ` : ""}
-
-          ${questions.length ? `
-            <h2>Question-by-Question Evaluation</h2>
-            ${questions
-              .map((q, i) => `
-                <div class="question">
-                  <strong>Question ${i + 1} (${escapeHtml(q.score)} / ${escapeHtml(q.maxScore)})</strong>
-                  <p>${escapeHtml(q.question)}</p>
-                  <p><em>${escapeHtml(q.feedback)}</em></p>
-                </div>
-              `)
-              .join("")}
-          ` : ""}
-
-          ${suggestions.length ? `
-            <h2>Improvement Suggestions</h2>
-            <ul>
-              ${suggestions.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
-            </ul>
-          ` : ""}
-
-          ${transcript.length ? `
-            <h2>Interview Transcript</h2>
-            ${transcript
-              .map((t, i) => `
-                <div class="transcript-item">
-                  <strong>Question ${i + 1}</strong>
-                  <p>${escapeHtml(t.question)}</p>
-                  <strong>Answer</strong>
-                  <p>${escapeHtml(t.answer)}</p>
-                </div>
-              `)
-              .join("")}
-          ` : ""}
-        </body>
-      </html>
-    `;
-
-    let browser: Awaited<ReturnType<typeof puppeteerCore.launch>> | undefined;
-    try {
-      browser = await puppeteerCore.launch(await getLaunchOptions());
-    } catch (launchErr) {
-      const errMsg = launchErr instanceof Error ? launchErr.message : String(launchErr);
-      const msg = `Failed to launch browser for PDF generation. Error: ${errMsg}`;
-      console.error(msg, launchErr);
-      return new NextResponse(`PDF generation failed: ${msg}`, { status: 500, headers: { "Content-Type": "text/plain;charset=utf-8" } });
+    if (results.teacherSummary) {
+      y = addSectionTitle(doc, "Teacher Summary", y);
+      y = addReportText(doc, results.teacherSummary, y);
     }
 
-    try {
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "networkidle0" });
-      await page.evaluate(() => document.fonts.ready);
+    if (questions.length > 0) {
+      y = addSectionTitle(doc, "Question-by-Question Evaluation", y);
 
-      const pdfBuffer = await page.pdf({
-        format: "Letter",
-        printBackground: true,
-        margin: { top: "40px", bottom: "40px", left: "40px", right: "40px" },
+      questions.forEach((question, index) => {
+        y = addReportText(
+          doc,
+          `Question ${index + 1} (${textValue(question.score)} / ${textValue(question.maxScore)})`,
+          y,
+          { size: 12, style: "bold" }
+        );
+        y = addReportText(doc, question.question, y + 2, { indent: 12 });
+        y = addReportText(doc, question.feedback, y + 2, { indent: 12, style: "italic" });
+        y += 10;
       });
-
-      return new NextResponse(Buffer.from(pdfBuffer), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": "attachment; filename=Interview_Report.pdf",
-        },
-      });
-    } finally {
-      await browser.close();
     }
+
+    if (suggestions.length > 0) {
+      y = addSectionTitle(doc, "Improvement Suggestions", y);
+
+      suggestions.forEach((suggestion) => {
+        y = addReportText(doc, `- ${textValue(suggestion)}`, y, { indent: 12 });
+      });
+    }
+
+    if (transcript.length > 0) {
+      y = addSectionTitle(doc, "Interview Transcript", y);
+
+      transcript.forEach((item, index) => {
+        y = addReportText(doc, `Question ${index + 1}`, y, { size: 12, style: "bold" });
+        y = addReportText(doc, item.question, y + 2, { indent: 12 });
+        y = addReportText(doc, "Answer", y + 6, { size: 12, style: "bold" });
+        y = addReportText(doc, item.answer, y + 2, { indent: 12 });
+        y += 10;
+      });
+    }
+
+    const pdfBuffer = Buffer.from(doc.output("arraybuffer"));
+
+    return new NextResponse(pdfBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=Interview_Report.pdf",
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("PDF generation error:", message, error);
