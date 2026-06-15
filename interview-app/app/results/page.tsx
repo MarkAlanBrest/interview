@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { useEffect, useState } from "react";
 import "./print.css";
 
 export default function ResultsPage() {
   const [results, setResults] = useState<any>(null);
-  const reportRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     async function loadResults() {
@@ -45,45 +43,44 @@ export default function ResultsPage() {
   const score = results.totalScore ?? 0;
   const passed = results.passed;
 
-  // ⭐ CLEAN, FIXED, MULTI-PAGE PDF GENERATOR
   async function downloadPDF() {
-    const element = reportRef.current;
-    if (!element) return;
+    if (!results) return;
 
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-    });
+    setExporting(true);
 
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "letter");
+    try {
+      const response = await fetch("/api/pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ results }),
+      });
 
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "PDF generation failed.");
+      }
 
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    // First page
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    // Additional pages
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "Interview_Report.pdf";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      alert("Unable to generate the PDF. Please try again.");
+    } finally {
+      setExporting(false);
     }
-
-    pdf.save("Interview_Report.pdf");
   }
 
   return (
-    <div ref={reportRef} className="report">
+    <div className="report">
 
       {/* ================= CERTIFICATE HEADER ================= */}
 
@@ -106,8 +103,12 @@ export default function ResultsPage() {
             : "Practice Attempt — Improve and Retry"}
         </div>
 
-        <button className="downloadBtn" onClick={downloadPDF}>
-          ⬇ DOWNLOAD PDF
+        <button
+          className="downloadBtn"
+          onClick={downloadPDF}
+          disabled={exporting}
+        >
+          {exporting ? "Generating PDF…" : "⬇ DOWNLOAD PDF"}
         </button>
 
         <p className="submitMsg">
