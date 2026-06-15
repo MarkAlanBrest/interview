@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
 
 export const runtime = "nodejs";
 
@@ -127,9 +126,8 @@ export async function POST(req: Request) {
     `;
 
     const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
       headless: true,
+      defaultViewport: { width: 1200, height: 800 },
     });
 
     const page = await browser.newPage();
