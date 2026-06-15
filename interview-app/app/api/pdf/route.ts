@@ -6,8 +6,20 @@ import os from "os";
 
 export const runtime = "nodejs";
 
-function normalizeArray(value: unknown) {
-  return Array.isArray(value) ? value : [];
+type PdfQuestion = {
+  question?: unknown;
+  feedback?: unknown;
+  score?: unknown;
+  maxScore?: unknown;
+};
+
+type TranscriptItem = {
+  question?: unknown;
+  answer?: unknown;
+};
+
+function normalizeArray<T = unknown>(value: unknown) {
+  return Array.isArray(value) ? (value as T[]) : [];
 }
 
 function escapeHtml(text: unknown) {
@@ -116,9 +128,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const results = body?.results ?? {};
-    const questions = normalizeArray(results.questions);
+    const questions = normalizeArray<PdfQuestion>(results.questions);
     const suggestions = normalizeArray(results.suggestions);
-    const transcript = normalizeArray(results.transcript);
+    const transcript = normalizeArray<TranscriptItem>(results.transcript);
 
     const html = `
       <html>
@@ -186,7 +198,7 @@ export async function POST(req: Request) {
           ${questions.length ? `
             <h2>Question-by-Question Evaluation</h2>
             ${questions
-              .map((q: any, i: number) => `
+              .map((q, i) => `
                 <div class="question">
                   <strong>Question ${i + 1} (${escapeHtml(q.score)} / ${escapeHtml(q.maxScore)})</strong>
                   <p>${escapeHtml(q.question)}</p>
@@ -199,14 +211,14 @@ export async function POST(req: Request) {
           ${suggestions.length ? `
             <h2>Improvement Suggestions</h2>
             <ul>
-              ${suggestions.map((s: any) => `<li>${escapeHtml(s)}</li>`).join("")}
+              ${suggestions.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}
             </ul>
           ` : ""}
 
           ${transcript.length ? `
             <h2>Interview Transcript</h2>
             ${transcript
-              .map((t: any, i: number) => `
+              .map((t, i) => `
                 <div class="transcript-item">
                   <strong>Question ${i + 1}</strong>
                   <p>${escapeHtml(t.question)}</p>
@@ -224,7 +236,7 @@ export async function POST(req: Request) {
     try {
       browser = await puppeteerCore.launch(await getLaunchOptions());
     } catch (launchErr) {
-      const errMsg = (launchErr as any)?.message ?? String(launchErr);
+      const errMsg = launchErr instanceof Error ? launchErr.message : String(launchErr);
       const msg = `Failed to launch browser for PDF generation. Error: ${errMsg}`;
       console.error(msg, launchErr);
       return new NextResponse(`PDF generation failed: ${msg}`, { status: 500, headers: { "Content-Type": "text/plain;charset=utf-8" } });
